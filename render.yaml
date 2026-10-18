@@ -1,0 +1,51 @@
+# Render setup: Postgres, the API server, and the landing page.
+# New > Blueprint > pick this repo. Then paste the three API keys into
+# doorlist-server > Environment (they're left blank on purpose).
+databases:
+  - name: doorlist-db
+    plan: basic-256mb
+    region: oregon
+    databaseName: doorlist
+    user: doorlist
+
+services:
+  - type: web
+    name: doorlist-server
+    runtime: node
+    plan: starter
+    region: oregon
+    rootDir: server
+    buildCommand: npm ci && npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22.14.0
+      - key: DATABASE_URL
+        fromDatabase:
+          name: doorlist-db
+          property: connectionString
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: ADMIN_TOKEN
+        generateValue: true
+      - key: APPLE_BUNDLE_ID
+        value: com.techadnank9.doorlist
+      - key: OPENAI_MODEL
+        value: gpt-6-astra
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: EXA_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+
+  - type: web
+    name: doorlist-site
+    runtime: static
+    buildCommand: echo "static"
+    staticPublishPath: ./site
+    headers:
+      - path: /*
+        name: X-Content-Type-Options
+        value: nosniff

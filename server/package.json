@@ -1,0 +1,30 @@
+{
+  "name": "doorlist-server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Doorlist's search and transcription backend. Holds the OpenAI, Exa and ElevenLabs keys so the app never does.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "mock": "tsx test/mock.ts",
+    "dev:mock": "OPENAI_API_KEY=mock EXA_API_KEY=mock ELEVENLABS_API_KEY=mock OPENAI_BASE_URL=http://localhost:8790/openai EXA_BASE_URL=http://localhost:8790/exa ELEVENLABS_BASE_URL=http://localhost:8790/elevenlabs APP_TOKEN=change-me SESSION_SECRET=dev ADMIN_TOKEN=dev DATABASE_URL=postgres://postgres:test@localhost:55432/doorlist tsx watch src/index.ts"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "hono": "^4.7.0",
+    "pg": "^8.23.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "@types/pg": "^8.23.1",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0"
+  }
+}

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>CFBundleDisplayName</key>
+	<string>Doorlist</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0</string>
+	<key>CFBundleVersion</key>
+	<string>1</string>
+	<key>DoorlistAPIBase</key>
+	<string>$(DOORLIST_API_BASE)</string>
+	<key>DoorlistAppToken</key>
+	<string>$(DOORLIST_APP_TOKEN)</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSAppTransportSecurity</key>
+	<dict>
+		<key>NSAllowsLocalNetworking</key>
+		<true/>
+	</dict>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Doorlist checks when you're busy so Find skips events that clash. Your calendar never leaves your phone.</string>
+	<key>NSCalendarsWriteOnlyAccessUsageDescription</key>
+	<string>Doorlist adds events you book to your calendar when you ask it to.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Doorlist finds events near you. Only your town is used in a search, never your exact spot.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Speak your answers instead of typing them.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Turns your spoken answers into text when Doorlist's server can't.</string>
+	<key>UILaunchScreen</key>
+	<dict/>
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+</dict>
+</plist>

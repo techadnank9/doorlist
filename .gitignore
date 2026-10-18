@@ -1,0 +1,15 @@
+# Xcode (the project is generated from project.yml with `xcodegen generate`)
+Doorlist.xcodeproj/
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+.DS_Store
+
+# Server
+server/node_modules/
+server/dist/
+server/.env
+server/*.db
+*.db
+.env

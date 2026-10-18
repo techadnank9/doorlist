@@ -1,0 +1,825 @@
+import SwiftUI
+import WebKit
+
+// MARK: - Page script
+
+/// Reads and fills the event page's own form. Runs in the page and in its
+/// same-site frames (where Eventbrite's checkout lives). It never touches
+/// password, payment or one-time code fields.
+private let pageScript = #"""
+(() => {
+  if (window.__doorlist) return;
+  const D = window.__doorlist = {};
+  let next = 1;
+
+  const docs = () => {
+    const out = [document];
+    for (const f of document.querySelectorAll('iframe')) {
+      try { if (f.contentDocument && f.contentDocument.body) out.push(f.contentDocument); } catch (e) {}
+    }
+    return out;
+  };
+  const clean = s => (s || '').replace(/\s+/g, ' ').trim();
+  const text = el => el ? clean(el.innerText || el.textContent) : '';
+  const visible = el => {
+    const r = el.getBoundingClientRect();
+    if (r.width < 2 || r.height < 2) return false;
+    const s = el.ownerDocument.defaultView.getComputedStyle(el);
+    return s.visibility !== 'hidden' && s.display !== 'none' && s.opacity !== '0';
+  };
+  const tag = el => {
+    if (!el.dataset.doorlistId) el.dataset.doorlistId = 'f' + (next++);
+    return el.dataset.doorlistId;
+  };
+  const labelFor = el => {
+    const d = el.ownerDocument;
+    if (el.id) {
+      const l = d.querySelector('label[for="' + CSS.escape(el.id) + '"]');
+      if (l && text(l)) return text(l);
+    }
+    const by = el.getAttribute('aria-labelledby');
+    if (by) {
+      const t = clean(by.split(/\s+/).map(i => text(d.getElementById(i))).join(' '));
+      if (t) return t;
+    }
+    const aria = el.getAttribute('aria-label');
+    if (aria) return clean(aria);
+    const wrap = el.closest('label');
+    if (wrap && text(wrap)) return text(wrap);
+    let node = el;
+    for (let i = 0; i < 4 && node; i++) {
+      node = node.parentElement;
+      if (!node) break;
+      const copy = node.cloneNode(true);
+      copy.querySelectorAll('input,textarea,select,option,button,svg').forEach(x => x.remove());
+      const t = text(copy);
+      if (t && t.length < 220) return t;
+    }
+    return clean(el.placeholder || el.name || '');
+  };
+  const isSecret = el => {
+    const ac = (el.getAttribute('autocomplete') || '').toLowerCase();
+    const type = (el.type || '').toLowerCase();
+    const hint = (labelFor(el) + ' ' + (el.name || '') + ' ' + (el.id || '')).toLowerCase();
+    return type === 'password' || ac.startsWith('cc-') || ac === 'one-time-code' ||
+      /\b(card|cvc|cvv|expir|security code|verification code|one.time|otp|passcode|password)\b/.test(hint) ||
+      (/\bcode\b/.test(hint) && !/(zip|postal|promo|discount|coupon|country)/.test(hint));
+  };
+
+  D.scan = () => {
+    const fields = [], buttons = [], groups = {};
+    let secretField = false, paymentFrame = false;
+    for (const d of docs()) {
+      for (const f of d.querySelectorAll('iframe')) {
+        if (/stripe|braintree|adyen|paypal|checkout\.com|recurly/i.test(f.src || '')) paymentFrame = true;
+      }
+      for (const el of d.querySelectorAll('input, textarea, select')) {
+        const type = (el.type || el.tagName).toLowerCase();
+        if (['hidden', 'submit', 'button', 'image', 'reset', 'file', 'search', 'range', 'color'].includes(type)) continue;
+        if (el.disabled || el.readOnly) continue;
+        // Styled checkboxes and radios often hide the real input behind their label,
+        // so those count as visible when the label (or wrapper) is.
+        if (type === 'radio' || type === 'checkbox') {
+          const holder = el.closest('label') || (el.id && el.ownerDocument.querySelector('label[for="' + CSS.escape(el.id) + '"]')) || el.parentElement;
+          if (!visible(el) && !(holder && visible(holder))) continue;
+        } else if (!visible(el)) continue;
+        if (isSecret(el)) { if (visible(el)) secretField = true; continue; }
+        const required = el.required || el.getAttribute('aria-required') === 'true' ||
+          /\*\s*$|\(required\)/i.test(labelFor(el));
+        if (type === 'radio') {
+          const key = el.name || tag(el);
+          const g = groups[key] || (groups[key] = { id: 'g:' + key, type: 'radio', options: [], required: false, value: '', label: '' });
+          const opt = labelFor(el);
+          g.options.push(opt);
+          if (el.checked) g.value = opt;
+          g.required = g.required || required;
+          if (!g.label) {
+            const set = el.closest('fieldset');
+            const legend = set && set.querySelector('legend');
+            const holder = el.closest('[role=radiogroup]');
+            g.label = text(legend) || (holder && clean(holder.getAttribute('aria-label'))) || '';
+            if (!g.label) {
+              let node = el.parentElement;
+              for (let i = 0; i < 5 && node; i++, node = node.parentElement) {
+                if (node.querySelectorAll('input[type=radio]').length > 1) {
+                  const copy = node.cloneNode(true);
+                  copy.querySelectorAll('input,label,svg').forEach(x => x.remove());
+                  g.label = text(copy).slice(0, 200);
+                  if (g.label) break;
+                }
+              }
+            }
+          }
+          el.dataset.doorlistGroup = key;
+          continue;
+        }
+        fields.push({
+          id: tag(el), type, label: labelFor(el).slice(0, 300), required,
+          autocomplete: (el.getAttribute('autocomplete') || '').toLowerCase(),
+          name: (el.name || '').toLowerCase(),
+          value: type === 'checkbox' ? String(el.checked) : (el.value || ''),
+          options: el.tagName === 'SELECT' ? [...el.options].map(o => clean(o.text)) : null,
+        });
+      }
+      for (const b of d.querySelectorAll('button, [role=button], input[type=submit], a[href]')) {
+        if (!visible(b) || b.disabled || b.getAttribute('aria-disabled') === 'true') continue;
+        const t = clean(b.innerText || b.value || b.getAttribute('aria-label'));
+        if (!t || t.length > 40) continue;
+        buttons.push({ id: tag(b), text: t, isLink: b.tagName === 'A' });
+      }
+    }
+    for (const g of Object.values(groups)) fields.push({ ...g, autocomplete: '', name: '' });
+
+    const meta = n => {
+      const m = document.querySelector('meta[property="' + n + '"], meta[name="' + n + '"]');
+      return m ? m.content : null;
+    };
+    let start = null, place = null;
+    for (const s of document.querySelectorAll('script[type="application/ld+json"]')) {
+      try {
+        const items = [].concat(JSON.parse(s.textContent));
+        for (const item of items.flatMap(i => i['@graph'] || [i])) {
+          if (/Event/.test([].concat(item['@type']).join(' '))) {
+            start = start || item.startDate || null;
+            const loc = [].concat(item.location || [])[0];
+            place = place || (loc && ((loc.address && (loc.address.addressLocality || loc.address.streetAddress)) || loc.name)) || null;
+          }
+        }
+      } catch (e) {}
+    }
+    const body = docs().map(d => d.body ? d.body.innerText : '').join('\n');
+    return JSON.stringify({
+      fields, buttons, secretField, paymentFrame,
+      text: body.slice(0, 20000),
+      title: meta('og:title') || document.title, image: meta('og:image'), start, place,
+    });
+  };
+
+  const find = id => {
+    for (const d of docs()) {
+      const el = d.querySelector('[data-doorlist-id="' + id + '"]');
+      if (el) return el;
+    }
+    return null;
+  };
+  const fire = (el, names) => names.forEach(n => el.dispatchEvent(new Event(n, { bubbles: true })));
+
+  D.fill = (id, value) => {
+    if (id.startsWith('g:')) {
+      const key = id.slice(2);
+      for (const d of docs()) {
+        for (const r of d.querySelectorAll('input[type=radio]')) {
+          if (r.dataset.doorlistGroup === key && labelFor(r) === value) { r.click(); return true; }
+        }
+      }
+      return false;
+    }
+    const el = find(id);
+    if (!el) return false;
+    el.focus();
+    if (el.type === 'checkbox') {
+      if (String(el.checked) !== value) el.click();
+    } else if (el.tagName === 'SELECT') {
+      const i = [...el.options].findIndex(o => clean(o.text) === value);
+      if (i < 0) return false;
+      el.selectedIndex = i;
+      fire(el, ['input', 'change']);
+    } else {
+      const proto = el.tagName === 'TEXTAREA' ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype;
+      Object.getOwnPropertyDescriptor(proto, 'value').set.call(el, value);
+      fire(el, ['input', 'change']);
+    }
+    el.blur();
+    return true;
+  };
+
+  D.click = id => {
+    const el = find(id);
+    if (!el) return false;
+    el.click();
+    return true;
+  };
+})();
+"""#
+
+// MARK: - What the script reports
+
+struct PageScan: Decodable {
+    struct Field: Decodable {
+        let id: String
+        let type: String
+        let label: String
+        let required: Bool
+        let autocomplete: String
+        let name: String
+        let value: String
+        let options: [String]?
+    }
+    struct Button: Decodable {
+        let id: String
+        let text: String
+        let isLink: Bool?
+    }
+    let fields: [Field]
+    let buttons: [Button]
+    let secretField: Bool
+    let paymentFrame: Bool
+    let text: String
+    let title: String?
+    let image: String?
+    let start: String?
+    let place: String?
+}
+
+/// A required field on the page that nothing remembered could fill.
+struct WebAsk: Identifiable, Equatable {
+    let id: String
+    let label: String
+    let options: [String]?
+    let multiline: Bool
+    let saveKey: String
+    let isCheckbox: Bool
+}
+
+// MARK: - Model
+
+@MainActor
+final class WebBookingModel: ObservableObject {
+    enum Phase: Equatable {
+        case working(String)
+        case needsYou(String)
+        case paid
+        case done(BookingStatus, alreadyBooked: Bool)
+        case paused
+    }
+
+    let link: EventLink
+    @Published var phase: Phase = .working("Opening the event")
+    @Published var asks: [WebAsk] = []
+    @Published var progress = 0.0
+    @Published private(set) var eventTitle: String?
+    @Published private(set) var filledCount = 0
+
+    weak var webView: WKWebView?
+    private var timer: Timer?
+    /// Field id -> the value Doorlist put in, so nothing is filled twice.
+    private var handled: [String: String] = [:]
+    private var clicks: [String: Int] = [:]
+    private var lastClick = Date.distantPast
+    private var sent: [String: SentAnswer] = [:]
+    private var lastScan: PageScan?
+    private var finished = false
+    private var startedAt = Date()
+    /// Confirmation phrases already on the page before Doorlist did anything
+    /// (an event blurb saying "see you there"), so they don't count as success.
+    private var baseline: Set<String>?
+
+    init(link: EventLink) { self.link = link }
+
+    var platform: EventPlatform { link.platform }
+
+    func start() {
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { [weak self] _ in
+            Task { @MainActor in await self?.tick() }
+        }
+    }
+
+    func stop() { timer?.invalidate() }
+
+    /// The person takes over: Doorlist stops tapping but keeps watching for success.
+    func pause() { phase = .paused }
+
+    func resume() {
+        phase = .working("Picking up where you left off")
+        clicks = [:]
+        startedAt = Date()
+    }
+
+    // MARK: Loop
+
+    private func tick() async {
+        guard !finished, let webView else { return }
+        _ = try? await webView.evaluateJavaScript(pageScript)
+        guard let raw = try? await webView.evaluateJavaScript("window.__doorlist.scan()") as? String,
+              let data = raw.data(using: .utf8),
+              let scan = try? JSONDecoder().decode(PageScan.self, from: data) else { return }
+        lastScan = scan
+        if let title = scan.title?.trimmingCharacters(in: .whitespaces), !title.isEmpty {
+            eventTitle = Self.tidyTitle(title)
+        }
+
+        let lower = scan.text.lowercased().replacingOccurrences(of: "’", with: "'")
+        let found = Self.successPhrases(in: lower)
+        if baseline == nil, !scan.text.isEmpty { baseline = Set(found.map(\.phrase)) }
+        if let hit = found.first(where: { !(baseline ?? []).contains($0.phrase) }) {
+            finish(hit.status, alreadyBooked: false)
+            return
+        }
+
+        switch phase {
+        case .paused, .paid, .done: return
+        default: break
+        }
+
+        if Self.looksPaid(lower) || scan.paymentFrame {
+            phase = .paid
+            return
+        }
+
+        await fillKnown(scan)
+        if !asks.isEmpty {
+            phase = .needsYou(asks.count == 1 ? "One answer needed" : "\(asks.count) answers needed")
+            return
+        }
+        if scan.secretField {
+            phase = .needsYou("Type the code \(platform == .web ? "the site" : platform.name) sent you")
+            return
+        }
+        await pressNext(scan)
+    }
+
+    private func fillKnown(_ scan: PageScan) async {
+        let saved = AnswerStore.shared.all()
+        var stillAsk: [WebAsk] = []
+        var quantityDone = false
+
+        for field in scan.fields {
+            let isCheck = field.type == "checkbox"
+            let empty = isCheck ? field.value != "true" : field.value.trimmingCharacters(in: .whitespaces).isEmpty
+            guard empty, handled[field.id] == nil else { continue }
+            let options = field.options?.filter { !$0.isEmpty && !Self.isPlaceholderOption($0) }
+
+            // Ticket quantity pickers: one ticket, on the first one only.
+            if let options, field.type.hasPrefix("select"), options.allSatisfy({ Int($0) != nil }), options.contains("1") {
+                if !quantityDone { await fill(field, "1", label: "Tickets") }
+                quantityDone = true
+                continue
+            }
+
+            if isCheck {
+                // Required consent boxes follow the Terms setting; optional ones stay off.
+                if field.required, Preferences.autoAgree {
+                    await fill(field, "true", label: field.label)
+                } else if field.required {
+                    stillAsk.append(WebAsk(id: field.id, label: Self.cleanLabel(field.label), options: nil,
+                                           multiline: false, saveKey: "", isCheckbox: true))
+                }
+                continue
+            }
+
+            let key = Self.key(for: field, saved: saved)
+            var value = Self.value(for: key, saved: saved)
+            if let v = value, let options, !options.isEmpty {
+                value = QuestionMatcher.choose(v, from: options)
+            }
+            if let value {
+                await fill(field, value, label: field.label)
+            } else if field.required {
+                stillAsk.append(WebAsk(id: field.id, label: Self.cleanLabel(field.label), options: options,
+                                       multiline: field.type == "textarea", saveKey: key, isCheckbox: false))
+            }
+        }
+        if stillAsk.map(\.id) != asks.map(\.id) { asks = stillAsk }
+    }
+
+    private func fill(_ field: PageScan.Field, _ value: String, label: String) async {
+        handled[field.id] = value
+        let js = "window.__doorlist.fill(\(Self.jsString(field.id)), \(Self.jsString(value)))"
+        if (try? await webView?.evaluateJavaScript(js)) as? Bool == true {
+            filledCount += 1
+            let shown = field.type == "checkbox" ? "Agreed" : value
+            sent[field.id] = SentAnswer(question: Self.cleanLabel(label), answer: shown)
+            phase = .working("Filled \(filledCount) from memory")
+        }
+    }
+
+    /// Taps whatever moves the booking forward: RSVP / Register first, then the
+    /// form's own Continue / Submit. Never a button that names a price.
+    private func pressNext(_ scan: PageScan) async {
+        guard Date().timeIntervalSince(lastClick) > 2.2 else { return }
+        let ranked = scan.buttons.compactMap { b -> (PageScan.Button, Int)? in
+            Self.rank(b.text, isLink: b.isLink == true).map { (b, $0) }
+        }.sorted { $0.1 < $1.1 }
+        guard let (button, rank) = ranked.first(where: { (clicks[Self.norm($0.0.text)] ?? 0) < 2 }) else {
+            if case .working = phase, Date().timeIntervalSince(startedAt) > 20 {
+                phase = .needsYou("Tap the button on the page to finish")
+            }
+            return
+        }
+        clicks[Self.norm(button.text), default: 0] += 1
+        lastClick = Date()
+        phase = .working(rank >= 100 ? "Sending your answers" : "Tapping \(button.text)")
+        _ = try? await webView?.evaluateJavaScript("window.__doorlist.click(\(Self.jsString(button.id)))")
+    }
+
+    // MARK: The person answers
+
+    func answer(_ ask: WebAsk, value: String, remember: Bool) {
+        let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        if remember, !ask.isCheckbox, !ask.saveKey.isEmpty {
+            AnswerStore.shared.set(ask.saveKey, label: ask.label, value: trimmed)
+        }
+        if ask.isCheckbox, remember { Preferences.autoAgree = true }
+        asks.removeAll { $0.id == ask.id }
+        let field = lastScan?.fields.first { $0.id == ask.id }
+        Task {
+            if let field {
+                await fill(field, trimmed, label: ask.label)
+            } else {
+                handled[ask.id] = trimmed
+                _ = try? await webView?.evaluateJavaScript(
+                    "window.__doorlist.fill(\(Self.jsString(ask.id)), \(Self.jsString(trimmed)))")
+            }
+            await tick()
+        }
+    }
+
+    // MARK: Finishing
+
+    private func finish(_ status: BookingStatus, alreadyBooked: Bool) {
+        guard !finished else { return }
+        finished = true
+        stop()
+        learnTypedAnswers()
+        let record = BookingRecord(
+            id: link.url.absoluteString, eventName: eventTitle ?? link.url.host ?? "Event",
+            url: link.url.absoluteString, status: status,
+            startAt: lastScan?.start.flatMap(Self.date), bookedAt: Date(),
+            coverUrl: lastScan?.image, place: lastScan?.place,
+            answers: Array(sent.values), platform: platform)
+        let known = HistoryStore.shared.all().contains { $0.id == record.id }
+        if !alreadyBooked || !known { HistoryStore.shared.add(record) }
+        if !alreadyBooked {
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+            Notifier.booked(record.eventName, status: status, platform: platform, url: link.url)
+        }
+        phase = .done(status, alreadyBooked: alreadyBooked)
+    }
+
+    /// Answers the person typed straight into the page are remembered too.
+    private func learnTypedAnswers() {
+        guard let scan = lastScan else { return }
+        let saved = AnswerStore.shared.all()
+        for field in scan.fields where handled[field.id] == nil && field.type != "checkbox" && field.type != "radio" {
+            let value = field.value.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !value.isEmpty, !field.label.isEmpty, field.options == nil else { continue }
+            let key = Self.key(for: field, saved: saved)
+            if saved[key] == nil { AnswerStore.shared.set(key, label: Self.cleanLabel(field.label), value: value) }
+        }
+    }
+
+    // MARK: Matching
+
+    /// Which remembered answer a page field wants: the browser autofill hint
+    /// first, then the same wording rules Luma questions use.
+    static func key(for field: PageScan.Field, saved: [String: SavedAnswer]) -> String {
+        switch field.autocomplete {
+        case "given-name": return "first_name"
+        case "family-name": return "last_name"
+        case "name": return "name"
+        case "email": return "email"
+        case "tel", "tel-national": return "phone"
+        case "organization": return "company"
+        case "organization-title": return "job_title"
+        default: break
+        }
+        let label = cleanLabel(field.label)
+        let n = QuestionMatcher.normalize(label + " " + field.name.replacingOccurrences(of: "_", with: " "))
+        if field.type == "email" || n.range(of: #"\be ?mail\b"#, options: .regularExpression) != nil,
+           n.range(of: #"\b(work|business|company)\b"#, options: .regularExpression) == nil { return "email" }
+        if field.type == "tel" { return "phone" }
+        if n.range(of: #"\b(first name|given name|firstname|fname)\b"#, options: .regularExpression) != nil { return "first_name" }
+        if n.range(of: #"\b(last name|surname|family name|lastname|lname)\b"#, options: .regularExpression) != nil { return "last_name" }
+        if n.range(of: #"^(full )?name\b|\byour name\b|\bfull name\b"#, options: .regularExpression) != nil { return "name" }
+        if let rule = QuestionMatcher.ruleKey(for: label) { return rule }
+        let own = QuestionMatcher.labelKey(for: label)
+        if saved[own] != nil { return own }
+        return QuestionMatcher.closestSavedKey(for: label, in: saved) ?? own
+    }
+
+    static func value(for key: String, saved: [String: SavedAnswer]) -> String? {
+        if let answer = saved[key], !answer.value.isEmpty { return answer.choices?.first ?? answer.value }
+        let full = saved["name"]?.value
+        switch key {
+        case "first_name":
+            return full.map { BookingPlanner.splitName($0).first }.flatMap { $0.isEmpty ? nil : $0 }
+        case "last_name":
+            return full.map { BookingPlanner.splitName($0).last }.flatMap { $0.isEmpty ? nil : $0 }
+        case "name":
+            guard let first = saved["first_name"]?.value else { return nil }
+            return [first, saved["last_name"]?.value ?? ""].joined(separator: " ").trimmingCharacters(in: .whitespaces)
+        default:
+            return nil
+        }
+    }
+
+    private static let entryWords = ["rsvp", "going", "i'm going", "im going", "register", "get tickets", "get ticket",
+                                     "reserve a spot", "reserve", "request to join", "join waitlist",
+                                     "join the waitlist", "attend", "count me in", "join event", "sign up for event"]
+    /// Links are only followed for these; "Sign up" or "Join" links in a site's
+    /// header make an account, not a booking.
+    private static let linkEntryWords: Set<String> = ["rsvp", "register", "get tickets", "get ticket", "reserve a spot"]
+    private static let submitWords = ["submit", "continue", "next", "confirm", "done", "complete registration",
+                                      "register now", "complete", "save", "send", "rsvp now", "place order",
+                                      "complete order", "checkout", "check out", "get my ticket", "submit rsvp"]
+    private static let never = ["can't", "cant", "not going", "maybe", "decline", "no", "cancel", "back", "share",
+                                "accept", "reject", "cookie", "allow",
+                                "log out", "sign out", "delete", "remove", "pay", "buy", "add to calendar",
+                                "follow", "message", "contact", "report", "invite", "host", "create"]
+
+    /// Lower is tapped first; nil means never tap it. Submit buttons rank 100+.
+    static func rank(_ raw: String, isLink: Bool) -> Int? {
+        let t = norm(raw)
+        if never.contains(where: { t == $0 || t.hasPrefix($0 + " ") }) { return nil }
+        if ["$", "€", "£", "₹"].contains(where: t.contains) { return nil }
+        if let i = submitWords.firstIndex(of: t) { return isLink ? nil : 100 + i }
+        if let i = entryWords.firstIndex(where: { t == $0 || t.hasPrefix($0 + " ") }) {
+            return !isLink || linkEntryWords.contains(entryWords[i]) ? i : nil
+        }
+        return nil
+    }
+
+    private static let confirmations: [(status: BookingStatus, phrases: [String])] = [
+        (.waitlist, ["you're on the waitlist", "you are on the waitlist", "added to the waitlist", "joined the waitlist"]),
+        (.pendingApproval, ["request sent", "pending approval", "awaiting approval", "your request has been sent",
+                            "the host will review", "request submitted"]),
+        (.approved, ["you're going", "you are going", "you're on the list", "you're registered", "you are registered",
+                   "you're in!", "rsvp confirmed", "order confirmed", "thanks for your order", "thank you for your order",
+                   "thanks for registering", "thank you for registering", "registration confirmed",
+                     "you're all set", "see you there", "check your email for your ticket", "you rsvp'd going"]),
+    ]
+
+    /// Every confirmation phrase on the page, waitlist and pending first.
+    static func successPhrases(in text: String) -> [(status: BookingStatus, phrase: String)] {
+        confirmations.flatMap { group in group.phrases.filter(text.contains).map { (group.status, $0) } }
+    }
+
+    /// A non-zero total on the page means money; Doorlist stops there.
+    static func looksPaid(_ text: String) -> Bool {
+        let pattern = #"(order total|total|subtotal|amount due)\s*:?\s*(us)?[$€£₹]\s?([0-9]+(?:[.,][0-9]{2})?)"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return false }
+        let ns = text as NSString
+        for m in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+            let amount = Double(ns.substring(with: m.range(at: 3)).replacingOccurrences(of: ",", with: ".")) ?? 0
+            if amount > 0 { return true }
+        }
+        return false
+    }
+
+    static func isPlaceholderOption(_ s: String) -> Bool {
+        let n = norm(s)
+        return n.hasPrefix("select") || n.hasPrefix("choose") || n.isEmpty || n == "please select"
+    }
+
+    static func cleanLabel(_ s: String) -> String {
+        s.replacingOccurrences(of: #"\s*\*\s*$"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: #"\s*\(required\)\s*"#, with: " ", options: [.regularExpression, .caseInsensitive])
+            .trimmingCharacters(in: .whitespaces)
+    }
+
+    static func norm(_ s: String) -> String {
+        s.lowercased().replacingOccurrences(of: "’", with: "'")
+            .replacingOccurrences(of: #"[^\p{L}\p{N}'$€£₹ ]+"#, with: " ", options: .regularExpression)
+            .replacingOccurrences(of: #"\s+"#, with: " ", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+    }
+
+    static func tidyTitle(_ s: String) -> String {
+        s.replacingOccurrences(of: #"\s*[|·–-]\s*(Partiful|Eventbrite)\s*$"#, with: "", options: .regularExpression)
+            .replacingOccurrences(of: #"\s+Tickets?,.*$"#, with: "", options: .regularExpression)
+    }
+
+    static func date(_ raw: String) -> Date? {
+        let iso = ISO8601DateFormatter()
+        if let d = iso.date(from: raw) { return d }
+        iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        if let d = iso.date(from: raw) { return d }
+        let local = DateFormatter()
+        local.locale = Locale(identifier: "en_US_POSIX")
+        for format in ["yyyy-MM-dd'T'HH:mm:ssZZZZZ", "yyyy-MM-dd'T'HH:mm:ss", "yyyy-MM-dd'T'HH:mm", "yyyy-MM-dd"] {
+            local.dateFormat = format
+            if let d = local.date(from: raw) { return d }
+        }
+        return nil
+    }
+
+    /// A Swift string as a JavaScript string literal.
+    static func jsString(_ s: String) -> String {
+        let data = (try? JSONSerialization.data(withJSONObject: [s])) ?? Data("[\"\"]".utf8)
+        return String(String(decoding: data, as: UTF8.self).dropFirst().dropLast())
+    }
+}
+
+// MARK: - Screen
+
+/// Books on the event's own page: Doorlist fills and taps while the person
+/// watches, and they can take over at any point.
+struct WebBookingView: View {
+    @StateObject private var model: WebBookingModel
+    let onClose: () -> Void
+    @State private var answerText = ""
+    @State private var remember = true
+    @FocusState private var focused: Bool
+    @Environment(\.scenePhase) private var scenePhase
+
+    init(link: EventLink, onClose: @escaping () -> Void) {
+        _model = StateObject(wrappedValue: WebBookingModel(link: link))
+        self.onClose = onClose
+    }
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                statusBar
+                ProgressView(value: model.progress)
+                    .progressViewStyle(.linear)
+                    .tint(.accentColor)
+                    .opacity(model.progress > 0 && model.progress < 1 ? 1 : 0)
+                EventPageWebView(model: model)
+            }
+            .overlay(alignment: .bottom) {
+                if let ask = model.asks.first, !isDone { askPanel(ask) }
+            }
+            .overlay { if case .done(let status, let already) = model.phase { doneCard(status, already) } }
+            .animation(Theme.spring, value: model.asks)
+            .animation(Theme.spring, value: model.phase)
+            .navigationTitle(model.eventTitle ?? model.platform.name)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) { Button("Close", action: onClose) }
+                ToolbarItem(placement: .primaryAction) {
+                    if case .paused = model.phase {
+                        Button("Resume") { model.resume() }
+                    } else if !isDone {
+                        Button("Let me") { model.pause() }
+                    }
+                }
+            }
+        }
+        .onAppear { model.start() }
+        .onDisappear { model.stop() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .background { notifyFirstAsk() }
+            if phase == .active { Notifier.clearQuestion() }
+        }
+        .onChange(of: model.asks) { _, _ in if scenePhase != .active { notifyFirstAsk() } }
+        .onReceive(NotificationCenter.default.publisher(for: AnswerInbox.name)) { note in
+            guard let (token, text) = AnswerInbox.read(note), let ask = model.asks.first(where: { $0.id == token }) else { return }
+            var value = text
+            if let options = ask.options, !options.isEmpty { value = QuestionMatcher.choose(text, from: options) ?? "" }
+            if ask.isCheckbox { value = "true" }
+            Notifier.clearQuestion()
+            if !value.isEmpty { model.answer(ask, value: value, remember: true) }
+        }
+    }
+
+    private var isDone: Bool { if case .done = model.phase { true } else { false } }
+
+    private func notifyFirstAsk() {
+        guard let ask = model.asks.first, !isDone else { return }
+        Notifier.needsAnswer(ask.isCheckbox ? "Agree to the event's terms?" : ask.label,
+                             event: model.eventTitle, token: ask.id, choices: ask.options)
+    }
+
+    private var statusBar: some View {
+        let (symbol, tint, text): (String, Color, String) = switch model.phase {
+        case .working(let t): ("sparkles", .accentColor, t)
+        case .needsYou(let t): ("hand.point.up.left.fill", .orange, t)
+        case .paid: ("creditcard.fill", .orange, "This one costs money. Check it and pay on the page yourself.")
+        case .paused: ("pause.circle.fill", .secondary, "You're driving. Doorlist is watching for the confirmation.")
+        case .done: ("checkmark.circle.fill", .green, "Done")
+        }
+        return Label {
+            Text(text).font(.footnote.weight(.medium)).foregroundStyle(.primary)
+        } icon: {
+            Image(systemName: symbol).foregroundStyle(tint)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .background(Color(.secondarySystemBackground))
+        .accessibilityElement(children: .combine)
+    }
+
+    private func askPanel(_ ask: WebAsk) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(ask.isCheckbox ? "One quick yes" : ask.label)
+                .font(.headline)
+                .fixedSize(horizontal: false, vertical: true)
+            if ask.isCheckbox {
+                Text(ask.label).font(.subheadline).foregroundStyle(.secondary).lineLimit(4)
+                Toggle("Agree to event terms for me from now on", isOn: $remember)
+                    .font(.footnote).tint(.accentColor)
+                Button("Agree") { model.answer(ask, value: "true", remember: remember) }
+                    .buttonStyle(.primary)
+            } else if let options = ask.options, !options.isEmpty {
+                ScrollView {
+                    VStack(spacing: 8) {
+                        ForEach(options, id: \.self) { option in
+                            Button(option) { model.answer(ask, value: option, remember: remember) }
+                                .buttonStyle(.secondary)
+                        }
+                    }
+                }
+                .frame(maxHeight: 220)
+                rememberToggle
+            } else {
+                HStack(spacing: 8) {
+                    TextField("Type or tap the mic", text: $answerText, axis: ask.multiline ? .vertical : .horizontal)
+                        .lineLimit(ask.multiline ? 3...6 : 1...1)
+                        .focused($focused)
+                        .submitLabel(.done)
+                        .onSubmit { submit(ask) }
+                        .padding(.vertical, 12)
+                    MicButton(context: ask.label) { spoken in
+                        answerText = ask.multiline && !answerText.isEmpty ? answerText + " " + spoken : spoken
+                    }
+                }
+                .padding(.leading, 12).padding(.trailing, 4)
+                .background(Color(.tertiarySystemFill),
+                            in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
+                rememberToggle
+                Button("Fill it in") { submit(ask) }
+                    .buttonStyle(.primary)
+                    .disabled(answerText.trimmingCharacters(in: .whitespaces).isEmpty)
+            }
+        }
+        .padding(18)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .padding(12)
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .id(ask.id)
+        .onAppear {
+            answerText = ""
+            remember = true
+            focused = ask.options == nil && !ask.isCheckbox
+        }
+    }
+
+    private var rememberToggle: some View {
+        Toggle(isOn: $remember) {
+            Label("Remember for next time", systemImage: "brain").font(.footnote).foregroundStyle(.secondary)
+        }
+        .tint(.accentColor)
+    }
+
+    private func submit(_ ask: WebAsk) {
+        model.answer(ask, value: answerText, remember: remember)
+        answerText = ""
+    }
+
+    private func doneCard(_ status: BookingStatus, _ already: Bool) -> some View {
+        ZStack {
+            Color.black.opacity(0.25).ignoresSafeArea()
+            VStack(spacing: 14) {
+                Image(systemName: status.symbol)
+                    .font(.system(size: 54, weight: .semibold))
+                    .foregroundStyle(status.tint)
+                    .accessibilityHidden(true)
+                Text(already ? "Already on the list" : status == .approved ? "You're in" : status.title)
+                    .font(.title.weight(.bold))
+                if let title = model.eventTitle {
+                    Text(title).font(.headline).multilineTextAlignment(.center)
+                }
+                Text(already ? "You already have a spot for this one."
+                     : "Booked on \(model.platform.name). Doorlist filled \(model.filledCount) answers for you.")
+                    .font(.subheadline).foregroundStyle(.secondary).multilineTextAlignment(.center)
+                Button("Done", action: onClose).buttonStyle(.primary).padding(.top, 6)
+            }
+            .padding(24)
+            .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+            .padding(24)
+        }
+        .transition(.opacity)
+    }
+}
+
+/// The in-app browser. Uses the default data store, so a Partiful or Eventbrite
+/// sign-in made once stays signed in for every later booking.
+private struct EventPageWebView: UIViewRepresentable {
+    @ObservedObject var model: WebBookingModel
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    func makeUIView(context: Context) -> WKWebView {
+        let config = WKWebViewConfiguration()
+        config.websiteDataStore = .default()
+        config.applicationNameForUserAgent = "Version/18.0 Mobile/15E148 Safari/604.1"
+        let view = WKWebView(frame: .zero, configuration: config)
+        view.allowsBackForwardNavigationGestures = true
+        model.webView = view
+        context.coordinator.progress = view.observe(\.estimatedProgress) { [weak model] web, _ in
+            let value = web.estimatedProgress
+            Task { @MainActor in model?.progress = value }
+        }
+        view.load(URLRequest(url: model.link.url))
+        return view
+    }
+
+    func updateUIView(_ uiView: WKWebView, context: Context) {}
+
+    final class Coordinator {
+        var progress: NSKeyValueObservation?
+    }
+}
