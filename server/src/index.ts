@@ -10,6 +10,7 @@ import { mountAdmin } from "./admin.js";
 import { mountExplore } from "./explore.js";
 import { take } from "./limits.js";
 import { Meter } from "./meter.js";
+import { findJob, follow, jobKey, startJob } from "./searchJobs.js";
 import { search, SearchError, type SearchInput } from "./search.js";
 import { clean, remove, sync } from "./sync.js";
 import { transcribe } from "./transcribe.js";
@@ -61,24 +62,32 @@ app.post("/v1/search", async (c) => {
   const who = caller(c);
   if (!who) return c.json({ error: "Missing install id." }, 400);
   if (!config.openAIKey) return c.json({ error: "Search isn't set up on this server yet." }, 503);
-  const input = parseSearch(await c.req.json().catch(() => null));
-  if (!input) return c.json({ error: "Tell Doorlist what you want to go to." }, 400);
-  if (!take(who, "search", config.searchLimit)) {
-    return c.json({ error: "That's today's searches used up. More tomorrow." }, 429);
+  const body = await c.req.json().catch(() => null);
+  const key = jobKey(who, body?.requestId);
+  // The app reconnecting after it was suspended: join that search rather than start another.
+  let job = findJob(key);
+  if (!job) {
+    const input = parseSearch(body);
+    if (!input) return c.json({ error: "Tell Doorlist what you want to go to." }, 400);
+    if (!take(who, "search", config.searchLimit)) {
+      return c.json({ error: "That's today's searches used up. More tomorrow." }, 429);
+    }
+    job = startJob(key, async (emit) => {
+      try {
+        return { result: await search(input, emit, new Meter(who, "search")) };
+      } catch (error) {
+        console.error("search failed", error);
+        if (sentryOn && !(error instanceof SearchError)) Sentry.captureException(error);
+        return { error: error instanceof SearchError ? error.message : "Search hit a snag. Try again." };
+      }
+    });
   }
 
   c.header("Content-Type", "application/x-ndjson");
   c.header("Cache-Control", "no-store");
+  const running = job;
   return stream(c, async (s) => {
-    const send = (line: unknown) => s.write(JSON.stringify(line) + "\n");
-    try {
-      const result = await search(input, (stage) => void send(stage), new Meter(who, "search"));
-      await send({ result });
-    } catch (error) {
-      const message = error instanceof SearchError ? error.message : "Search hit a snag. Try again.";
-      console.error("search failed", error);
-      await send({ error: message });
-    }
+    await follow(running, (line) => void s.write(JSON.stringify(line) + "\n").catch(() => {}));
   });
 });
 

@@ -20,6 +20,29 @@ final class FindModel: ObservableObject {
     @Published private(set) var lastQuery = ""
     private var clarifications: [Clarification] = []
     private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
+    /// Sent with each search, so a reconnect joins it on the server rather than starting over.
+    private var requestId = UUID().uuidString
+    /// Set when the connection dropped: the search the server is still running for us.
+    private var resumable: (autoBook: Bool, book: (EventLink) -> Void)?
+    private var resumeOnActive: NSObjectProtocol?
+    /// Rejoins made without a tap, capped so a phone that's truly offline doesn't loop.
+    private var autoResumes = 0
+
+    init() {
+        // iOS suspends the app soon after it leaves the screen, which drops the search's
+        // connection. Back on screen, pick that search up again.
+        resumeOnActive = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.resumeIfDropped() }
+        }
+    }
+
+    private func resumeIfDropped() {
+        guard let pending = resumable, case .failed = phase, autoResumes < 2 else { return }
+        autoResumes += 1
+        run(autoBook: pending.autoBook, book: pending.book, resume: true)
+    }
 
     var isWorking: Bool { if case .working = phase { true } else { false } }
 
@@ -27,8 +50,10 @@ final class FindModel: ObservableObject {
         let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, !isWorking else { return }
         if text != lastQuery { clarifications = [] }
+        // Try again after a dropped connection rejoins the same search.
+        let resume = text == lastQuery && resumable != nil
         lastQuery = text
-        run(autoBook: autoBook, book: book)
+        run(autoBook: autoBook, book: book, resume: resume)
     }
 
     /// The person answered the follow-up question.
@@ -48,13 +73,20 @@ final class FindModel: ObservableObject {
     }
 
     func reset() {
+        resumable = nil
         phase = .idle
         results = []
         autoPicked = nil
         clarifications = []
     }
 
-    private func run(autoBook: Bool, book: @escaping (EventLink) -> Void) {
+    private func run(autoBook: Bool, book: @escaping (EventLink) -> Void, resume: Bool = false) {
+        if !resume {
+            requestId = UUID().uuidString
+            autoResumes = 0
+        }
+        resumable = nil
+        let id = requestId
         phase = .working(.locating)
         results = []
         autoPicked = nil
@@ -65,14 +97,16 @@ final class FindModel: ObservableObject {
         // Keep going for a while if the person switches apps mid-search.
         endBackgroundTask(backgroundTask)
         let background = UIApplication.shared.beginBackgroundTask(withName: "event-search") { [weak self] in
-            guard let self else { return }
-            self.endBackgroundTask(self.backgroundTask)
+            // UIKit only accepts endBackgroundTask on the main thread; never assume where this runs.
+            let end = { MainActor.assumeIsolated { if let self { self.endBackgroundTask(self.backgroundTask) } } }
+            if Thread.isMainThread { end() } else { DispatchQueue.main.sync(execute: end) }
         }
         backgroundTask = background
-        Task {
-            defer { endBackgroundTask(background) }
+        Task { @MainActor [weak self] in
+            defer { self?.endBackgroundTask(background) }
+            guard let self else { return }
             do {
-                let outcome = try await EventSearch.run(request, clarifications: asked) { [weak self] stage in
+                let outcome = try await EventSearch.run(request, clarifications: asked, requestId: id) { [weak self] stage in
                     self?.phase = .working(stage)
                 }
                 switch outcome {
@@ -89,6 +123,11 @@ final class FindModel: ObservableObject {
                         Notifier.found(best.title, url: link.url)
                     }
                 }
+            } catch SearchError.connectionLost {
+                resumable = (autoBook, book)
+                phase = .failed(SearchError.connectionLost.localizedDescription)
+                // Already back on screen (the drop wasn't a suspension): pick it up now.
+                if UIApplication.shared.applicationState == .active { resumeIfDropped() }
             } catch {
                 phase = .failed(error.localizedDescription)
             }

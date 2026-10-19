@@ -79,11 +79,15 @@ enum SearchStage: Equatable {
 enum SearchError: LocalizedError {
     case server(String)
     case unreadable
+    /// The connection dropped mid-search, usually because iOS suspended the app. The server
+    /// keeps going, so asking again with the same request id picks the search back up.
+    case connectionLost
 
     var errorDescription: String? {
         switch self {
         case .server(let message): message
         case .unreadable: "The search came back in a shape Doorlist couldn't read. Try again."
+        case .connectionLost: "Lost the connection while searching. Try again to pick it back up."
         }
     }
 }
@@ -97,7 +101,7 @@ enum SearchError: LocalizedError {
 /// calendar check and "already booked" check happen here, on the phone.
 enum EventSearch {
 
-    static func run(_ request: String, clarifications: [Clarification] = [],
+    static func run(_ request: String, clarifications: [Clarification] = [], requestId: String,
                     progress: @escaping @MainActor (SearchStage) -> Void) async throws -> SearchOutcome {
         await progress(.locating)
         let place = await LocationProvider.shared.current()
@@ -106,6 +110,7 @@ enum EventSearch {
             "request": request,
             "clarifications": clarifications.map { ["question": $0.question, "answer": $0.answer] },
             "taste": TasteProfile.recent(),
+            "requestId": requestId,
         ]
         if let place {
             var p: [String: Any] = [:]
@@ -136,22 +141,32 @@ enum EventSearch {
             throw SearchError.server(DoorlistAPI.message(from: data, status: status))
         }
 
-        for try await line in bytes.lines {
-            guard let object = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any] else { continue }
-            if let stage = object["stage"] as? String {
-                switch stage {
-                case "searching": await progress(.searching)
-                case "checking": await progress(.checking(object["count"] as? Int ?? 0))
-                case "ranking": await progress(.ranking)
-                default: break
-                }
-            } else if let message = object["error"] as? String {
-                throw SearchError.server(message)
-            } else if let result = object["result"] as? [String: Any] {
-                return try outcome(from: result)
+        do {
+            for try await line in bytes.lines {
+                if let outcome = try await handle(line, progress: progress) { return outcome }
             }
+        } catch is URLError {
+            throw SearchError.connectionLost
         }
         throw SearchError.unreadable
+    }
+
+    /// One line of the stream: a stage, an error, or the result.
+    private static func handle(_ line: String, progress: @MainActor (SearchStage) -> Void) async throws -> SearchOutcome? {
+        guard let object = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any] else { return nil }
+        if let stage = object["stage"] as? String {
+            switch stage {
+            case "searching": await progress(.searching)
+            case "checking": await progress(.checking(object["count"] as? Int ?? 0))
+            case "ranking": await progress(.ranking)
+            default: break
+            }
+        } else if let message = object["error"] as? String {
+            throw SearchError.server(message)
+        } else if let result = object["result"] as? [String: Any] {
+            return try outcome(from: result)
+        }
+        return nil
     }
 
     private static func outcome(from result: [String: Any]) throws -> SearchOutcome {

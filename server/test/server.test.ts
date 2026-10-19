@@ -189,6 +189,18 @@ describe("POST /v1/search", () => {
     assert.ok(second.at(-1).result.events.length > 0);
   });
 
+  test("a reconnect with the same request id joins that search instead of running another", async () => {
+    // The daily cap in tests is 3; four calls with one id must count as one search.
+    for (let i = 0; i < 4; i++) {
+      const lines = await searchLines("rooftop party saturday", "install-resume", { requestId: "resume-0000-0001" });
+      assert.ok(lines.at(-1).result.events.length > 0, `call ${i + 1} got the result`);
+    }
+    const other = await app.request("/v1/search", {
+      method: "POST", headers: headers("install-other"), body: JSON.stringify({ request: "x", requestId: "resume-0000-0001" }),
+    });
+    assert.equal(other.status, 200, "another install with the same id starts its own search");
+  });
+
   test("caps searches per install per day", async () => {
     for (let i = 0; i < 3; i++) await searchLines("rooftop party", "install-limit");
     const res = await app.request("/v1/search", { method: "POST", headers: headers("install-limit"), body: '{"request":"one more"}' });
