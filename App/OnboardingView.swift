@@ -71,23 +71,35 @@ struct OnboardingView: View {
     // MARK: 1. Welcome + sign in
 
     private var welcome: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Spacer(minLength: 24)
-            AppMark().padding(.bottom, 28)
-            Text("Say where you want\nto go. Doorlist\ngets you in.")
-                .font(.largeTitle.weight(.bold))
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.bottom, 14)
-            Text("Share an event link, or just describe one. Doorlist finds it, fills the form with answers you've given before, and books it.")
-                .font(.title3)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.bottom, 28)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                AppMark(size: 60).padding(.bottom, 24)
+                Text("Say where you want to go. Doorlist gets you in.")
+                    .font(.largeTitle.weight(.bold))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 12)
+                Text("Doorlist finds events and signs you up for them, filling each form with answers you've already given.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.bottom, 32)
 
-            WelcomeExample()
-            Spacer(minLength: 24)
+                VStack(alignment: .leading, spacing: 22) {
+                    Feature(symbol: "sparkle.magnifyingglass", title: "Find anything",
+                            detail: "Type or say what you're in the mood for. Doorlist searches Luma, Partiful, Eventbrite and more near you.")
+                    Feature(symbol: "square.and.arrow.up", title: "Or share a link",
+                            detail: "Seen an event in Safari, Messages or WhatsApp? Tap Share and pick Doorlist.")
+                    Feature(symbol: "text.badge.checkmark", title: "Forms fill themselves",
+                            detail: "Each question is asked once, by text or voice. Every sign-up after that fills itself in.")
+                    Feature(symbol: "calendar.badge.checkmark", title: "You're on the list",
+                            detail: "Free events are booked for you, paid tickets wait for your OK, and everything lands on your calendar.")
+                }
+            }
+            .padding(.horizontal, 28)
+            .padding(.top, 32)
+            .padding(.bottom, 24)
         }
-        .padding(.horizontal, 28)
+        .scrollBounceBehavior(.basedOnSize)
         .bottomActionBar {
             AppleSignInButton { outcome in
                 signInError = outcome.error
@@ -305,45 +317,25 @@ private struct Step: View {
     }
 }
 
-/// What Doorlist does, shown as one request and its result rather than a feature list.
-private struct WelcomeExample: View {
+/// One thing Doorlist does: a symbol, a short title, one line of detail.
+private struct Feature: View {
+    let symbol: String
+    let title: String
+    let detail: String
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            HStack(spacing: 10) {
-                Image(systemName: "sparkle.magnifyingglass").foregroundStyle(.secondary)
-                Text("\u{201C}A free AI meetup Thursday\u{201D}")
-                    .foregroundStyle(.primary)
-                Spacer(minLength: 0)
+        HStack(alignment: .top, spacing: 16) {
+            Image(systemName: symbol)
+                .font(.title3)
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 28)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(.headline)
+                Text(detail).font(.subheadline).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .font(.callout)
-            .padding(14)
-            Divider().padding(.leading, 14)
-            HStack(spacing: 12) {
-                VStack(spacing: 0) {
-                    Text("THU").font(.caption2.weight(.bold)).foregroundStyle(Color.accentColor)
-                    Text("23").font(.title3.weight(.semibold))
-                }
-                .frame(width: 44, height: 44)
-                .background(Color.fill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("AI Builders Night").font(.subheadline.weight(.semibold))
-                    Text("4 questions answered").font(.footnote).foregroundStyle(.secondary)
-                }
-                Spacer(minLength: 8)
-                Text("You're in")
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 10).padding(.vertical, 5)
-                    .background(Color.accentColor, in: Capsule())
-            }
-            .padding(14)
         }
-        .background(Color.surface, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
-                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Example: you ask for a free AI meetup Thursday, and Doorlist books AI Builders Night and answers its questions for you.")
+        .accessibilityElement(children: .combine)
     }
 }

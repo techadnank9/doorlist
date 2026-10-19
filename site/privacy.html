@@ -35,6 +35,10 @@
     <tr><td>Search requests you type or say, your town, region, country and time zone, and names of events you've booked</td><td>To find events near you that fit what you asked</td><td>Sent to our server and search partners for that search; not kept with your account</td></tr>
     <tr><td>Voice recordings of answers</td><td>To turn what you say into text</td><td>Sent to our server and our transcription partner, then deleted. We don't keep recordings</td></tr>
     <tr><td>Usage records: which features you used, when, and what they cost us (for example tokens and seconds of audio), tied to your account or a random install ID</td><td>To run the service, prevent abuse with daily limits, and understand our costs</td><td>Our server</td></tr>
+    <tr><td>App analytics: which screens and features you use (for example opening an event from Explore), the app version, device model and iOS version, tied to a random install ID or your account ID. Never your answers, name, email or phone number</td><td>To see what works and what to fix</td><td>PostHog</td></tr>
+    <tr><td>Survey responses, if you choose to answer an in-app survey</td><td>To hear what you think of Doorlist</td><td>PostHog</td></tr>
+    <tr><td>Search quality records: the request you typed or said, the AI model's reply, how long it took and what it cost</td><td>To check that search results are good and spot errors</td><td>PostHog, kept 90 days</td></tr>
+    <tr><td>Crash and error reports: what the app or server was doing when it failed, device model and iOS version. No answers or contact details</td><td>To fix crashes</td><td>Sentry</td></tr>
   </table>
 
   <h2>What stays on your phone only</h2>
@@ -52,6 +56,8 @@
     <li><b>Exa</b>: your search request and town, to find event pages.</li>
     <li><b>ElevenLabs</b>: voice recordings, to transcribe answers you speak.</li>
     <li><b>Render</b>: hosts our server and database in the United States. Data is encrypted in transit and at rest by Render's infrastructure.</li>
+    <li><b>PostHog</b>: app analytics, survey responses and search quality records (United States).</li>
+    <li><b>Sentry</b>: crash and error reports (United States).</li>
     <li><b>Apple</b>: Sign in with Apple, and Apple's on-device speech recognition when our transcription is unavailable.</li>
   </ul>
   <p>When Doorlist books an event, the answers on that form go to the event site and its host, exactly as if you had filled it in yourself. Their own privacy policies apply to what they receive.</p>
@@ -61,6 +67,7 @@
   <ul>
     <li>Your account data (answers, booking history, preferences) is kept until you delete it or delete your account.</li>
     <li>Answers you forget in the app are removed from your account on the next sync.</li>
+    <li>App analytics and crash reports are kept for up to one year; search quality records for 90 days.</li>
     <li>Usage records linked to your account are deleted with your account. Records tied only to an install ID are kept to understand costs and may be deleted at any time.</li>
   </ul>
 
@@ -79,7 +86,7 @@
   <p>If we change this policy in a way that matters, we'll update the date above and tell you in the app before the change applies.</p>
 
   <h2>Contact</h2>
-  <p>Questions or requests: open an issue at <a href="https://github.com/techadnank9/doorlist/issues">github.com/techadnank9/doorlist/issues</a>, or see <a href="support.html">Support</a>.</p>
+  <p>Questions or privacy requests: email <a href="mailto:mdadnan456@gmail.com">mdadnan456@gmail.com</a>. You can also see <a href="support.html">Support</a>.</p>
 </main>
 <footer><div class="wrap"><span>Copyright &copy; 2026 Doorlist</span><nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="support.html">Support</a></nav></div></footer>
 </body>

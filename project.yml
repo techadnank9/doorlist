@@ -21,16 +21,13 @@ settings:
     DEVELOPMENT_TEAM: S2UTA2J3GD
     CODE_SIGN_STYLE: Automatic
     TARGETED_DEVICE_FAMILY: "1"
-    # Doorlist's server. Debug points at a local `npm run dev`; set the deployed URL for Release.
-    DOORLIST_API_BASE: http://localhost:8787
+    # Doorlist's server on Render, for every build. For a local `npm run dev:mock`, use http://localhost:8787.
+    DOORLIST_API_BASE: https://doorlist-server.onrender.com
     DOORLIST_APP_TOKEN: change-me
     # Product analytics and crash reports. Empty means off; set them for Release builds.
     POSTHOG_API_KEY: phc_uBjZjjsEG6ZNMTokNWuPvpW3FbAX4aBsmfFn9X47TStT
     POSTHOG_HOST: https://us.i.posthog.com
-    SENTRY_DSN: ""
-  configs:
-    Release:
-      DOORLIST_API_BASE: https://doorlist-server.onrender.com
+    SENTRY_DSN: https://972bf8a3b08af8da511e0cd314cad6ba@o4512283405189120.ingest.us.sentry.io/4512284217245696
 targets:
   Doorlist:
     type: application
@@ -42,7 +39,10 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Doorlist
-        UILaunchScreen: {}
+        UILaunchScreen:
+          UIColorName: Canvas
+          UIImageName: LaunchMark
+          UIImageRespectsSafeAreaInsets: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UIRequiresFullScreen: true

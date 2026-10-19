@@ -104,6 +104,8 @@ struct RootView: View {
     @State private var showConnect = false
     @State private var booking: BookingRequest?
 
+    private var needsOnboarding: Bool { !onboarded || !state.signedIn }
+
     var body: some View {
         TabView {
             HomeView(showConnect: $showConnect, booking: $booking)
@@ -128,11 +130,16 @@ struct RootView: View {
         }
         // Doorlist needs an account: first launch, a skipped sign in on an older build, signing out
         // and deleting the account all land here until Sign in with Apple succeeds.
-        .fullScreenCover(isPresented: .constant(!onboarded || !state.signedIn)) {
-            OnboardingView(returning: onboarded) { onboarded = true; state.refresh() }
-                .environmentObject(state)
-                .interactiveDismissDisabled()
+        // Drawn over the tabs from the first frame, rather than a cover that slides up after them.
+        .accessibilityHidden(needsOnboarding)
+        .overlay {
+            if needsOnboarding {
+                OnboardingView(returning: onboarded) { onboarded = true; state.refresh() }
+                    .environmentObject(state)
+                    .transition(.opacity)
+            }
         }
+        .animation(.easeOut(duration: 0.25), value: needsOnboarding)
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {
                 state.refresh()
