@@ -169,3 +169,10 @@ def test_same_event_on_two_sites_becomes_one_luma_event():
     [merged] = dedupe([cv, on_luma])
     assert merged.id == "luma:evt-abc" and merged.url == "https://luma.com/iaw"
     assert merged.sources == {"luma", "cerebralvalley"} and "hackathons" in merged.topics
+
+
+def test_saved_pages_carry_no_third_party_keys():
+    """Saved pages embed the sites' own browser keys (Google Maps). They're scrubbed when a page is
+    saved here, so the repo never trips secret scanning: replace them with AIza_REDACTED_THIRD_PARTY_KEY."""
+    for path in F.iterdir():
+        assert not re.search(r"AIza[0-9A-Za-z_-]{35}", path.read_text(errors="ignore")), path.name

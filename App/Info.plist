@@ -41,6 +41,12 @@
 	<string>Speak your answers instead of typing them.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Turns your spoken answers into text when Doorlist's server can't.</string>
+	<key>PostHogAPIKey</key>
+	<string>$(POSTHOG_API_KEY)</string>
+	<key>PostHogHost</key>
+	<string>$(POSTHOG_HOST)</string>
+	<key>SentryDSN</key>
+	<string>$(SENTRY_DSN)</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UIRequiresFullScreen</key>

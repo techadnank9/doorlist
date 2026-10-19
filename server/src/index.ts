@@ -1,3 +1,4 @@
+import { Sentry, sentryOn } from "./instrument.js";
 import { serve } from "@hono/node-server";
 import { Hono, type Context } from "hono";
 import { logger } from "hono/logger";
@@ -15,6 +16,13 @@ import { transcribe } from "./transcribe.js";
 export const app = new Hono();
 if (process.env.NODE_ENV !== "test") app.use(logger());
 mountAdmin(app);
+
+// Unexpected errors go to Sentry (when it's set up) and get a plain answer instead of a stack trace.
+app.onError((error, c) => {
+  if (sentryOn) Sentry.captureException(error);
+  console.error(error);
+  return c.json({ error: "Doorlist's server had a problem." }, 500);
+});
 
 app.get("/health", (c) =>
   c.json({ ok: true, search: Boolean(config.openAIKey), exa: Boolean(config.exaKey), voice: Boolean(config.elevenLabsKey) }),

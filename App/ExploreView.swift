@@ -220,7 +220,11 @@ struct ExploreView: View {
             }
         } else {
             ForEach(model.events) { event in
-                Button { booking = BookingRequest(input: event.url) } label: { ExploreCard(event: event) }
+                Button {
+                    Telemetry.capture("explore_event_opened", ["sources": event.sources, "topic": model.topic ?? "all",
+                                                               "place": model.place == ExploreModel.nearMe ? "near_me" : model.place])
+                    booking = BookingRequest(input: event.url)
+                } label: { ExploreCard(event: event) }
                     .buttonStyle(.pressable)
                     .onAppear { model.more(after: event) }
             }

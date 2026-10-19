@@ -19,6 +19,7 @@ struct DoorlistApp: App {
 final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
+        Telemetry.start()
         UNUserNotificationCenter.current().delegate = self
         // Explore's covers: keep them on disk so scrolling back never downloads one twice.
         URLCache.shared = URLCache(memoryCapacity: 30_000_000, diskCapacity: 300_000_000)

@@ -39,6 +39,8 @@ services:
         sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
+      - key: SENTRY_DSN
+        sync: false
 
   # Explore's collector: reads Luma and the other event sites once an hour, politely, into the
   # same database the server reads. Phones never reach those sites through Doorlist.
