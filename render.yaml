@@ -1,4 +1,4 @@
-# Render setup: Postgres, the API server, and the landing page.
+# Render setup: Postgres, the API server, Explore's hourly collector, and the landing page.
 # New > Blueprint > pick this repo. Then paste the three API keys into
 # doorlist-server > Environment (they're left blank on purpose).
 databases:
@@ -39,6 +39,25 @@ services:
         sync: false
       - key: ELEVENLABS_API_KEY
         sync: false
+
+  # Explore's collector: reads Luma and the other event sites once an hour, politely, into the
+  # same database the server reads. Phones never reach those sites through Doorlist.
+  - type: cron
+    name: doorlist-collector
+    runtime: python
+    plan: starter
+    region: oregon
+    schedule: "7 * * * *"
+    rootDir: collector
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m doorlist_collector.run
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: DATABASE_URL
+        fromDatabase:
+          name: doorlist-db
+          property: connectionString
 
   - type: web
     name: doorlist-site

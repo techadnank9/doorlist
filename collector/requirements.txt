@@ -1,0 +1,4 @@
+# Explore's collector. Plain HTTP fetches only, so no browser download is needed on Render.
+scrapling[fetchers]==0.5
+psycopg[binary]==3.3.6
+pytest==9.1.1

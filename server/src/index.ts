@@ -5,6 +5,7 @@ import { stream } from "hono/streaming";
 import { issueSession, readSession, verifyAppleToken } from "./auth.js";
 import { config } from "./config.js";
 import { mountAdmin } from "./admin.js";
+import { mountExplore } from "./explore.js";
 import { take } from "./limits.js";
 import { Meter } from "./meter.js";
 import { search, SearchError, type SearchInput } from "./search.js";
@@ -33,6 +34,8 @@ app.use("/v1/*", async (c, next) => {
   }
   await next();
 });
+
+mountExplore(app);
 
 app.post("/v1/session", async (c) => {
   const body = await c.req.json().catch(() => null);

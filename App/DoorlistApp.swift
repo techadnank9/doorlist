@@ -20,6 +20,8 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
     func application(_ application: UIApplication,
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         UNUserNotificationCenter.current().delegate = self
+        // Explore's covers: keep them on disk so scrolling back never downloads one twice.
+        URLCache.shared = URLCache(memoryCapacity: 30_000_000, diskCapacity: 300_000_000)
         Notifier.registerCategories()
         #if DEBUG
         // Test runs can start signed in without Apple (unsigned simulator builds can't use it).
@@ -105,6 +107,8 @@ struct RootView: View {
         TabView {
             HomeView(showConnect: $showConnect, booking: $booking)
                 .tabItem { Label("Events", systemImage: "ticket.fill") }
+            ExploreView(booking: $booking)
+                .tabItem { Label("Explore", systemImage: "safari.fill") }
             FindView(booking: $booking)
                 .tabItem { Label("Find", systemImage: "sparkle.magnifyingglass") }
             AnswersView(showConnect: $showConnect)
@@ -121,9 +125,12 @@ struct RootView: View {
                 BookingSheet(request: request, showConnect: $showConnect, booking: $booking)
             }
         }
-        .fullScreenCover(isPresented: Binding(get: { !onboarded }, set: { onboarded = !$0 })) {
-            OnboardingView { onboarded = true; state.refresh() }
+        // Doorlist needs an account: first launch, a skipped sign in on an older build, signing out
+        // and deleting the account all land here until Sign in with Apple succeeds.
+        .fullScreenCover(isPresented: Binding(get: { !onboarded || !state.signedIn }, set: { _ in })) {
+            OnboardingView(returning: onboarded) { onboarded = true; state.refresh() }
                 .environmentObject(state)
+                .interactiveDismissDisabled()
         }
         .onChange(of: scenePhase) { _, phase in
             if phase == .active {

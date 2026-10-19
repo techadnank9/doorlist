@@ -145,25 +145,15 @@ struct AnswersView: View {
                 }
 
                 Section {
-                    if state.signedIn {
-                        Label("Signed in with Apple", systemImage: "checkmark.icloud.fill")
-                            .foregroundStyle(.green)
-                        Button("Sign out") { Account.session = nil; state.refresh() }
-                        Button("Delete account", role: .destructive) { confirmDelete = true }
-                    } else {
-                        AppleSignInButton(label: .signIn) { outcome in
-                            accountError = outcome.error
-                            state.refresh()
-                        }
-                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-                        if let accountError { Text(accountError).font(.footnote).foregroundStyle(.red) }
-                    }
+                    Label("Signed in with Apple", systemImage: "checkmark.icloud.fill")
+                        .foregroundStyle(.green)
+                    Button("Sign out") { Account.session = nil; state.refresh() }
+                    Button("Delete account", role: .destructive) { confirmDelete = true }
+                    if let accountError { Text(accountError).font(.footnote).foregroundStyle(.red) }
                 } header: {
                     Text("Your account")
                 } footer: {
-                    Text(state.signedIn
-                         ? "Your answers and bookings are saved to your account, so a new phone signed into the same Apple ID gets them back."
-                         : "Sign in to keep your answers and bookings when you switch phones. Without it they stay only on this one.")
+                    Text("Your answers and bookings are saved to your account, so a new phone signed into the same Apple ID gets them back.")
                 }
 
                 Section {
@@ -176,10 +166,15 @@ struct AnswersView: View {
                             Label("Connect Luma", systemImage: "link")
                         }
                     }
+                    NavigationLink {
+                        ConnectedSitesView()
+                    } label: {
+                        Label("Partiful, Cerebral Valley, Y Combinator and more", systemImage: "person.badge.key")
+                    }
                 } header: {
                     Text("Event sites")
                 } footer: {
-                    Text("Your Luma, Partiful and Eventbrite logins stay on this phone and never sync.")
+                    Text("Luma books in one tap. Sign in to other sites once and their bookings start signed in. Logins stay on this phone and never sync.")
                 }
               }
             }

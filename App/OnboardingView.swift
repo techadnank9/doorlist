@@ -3,8 +3,10 @@ import AuthenticationServices
 
 /// First launch, one decision per screen: what Doorlist does, sign in with
 /// Apple, your details (Apple never shares a phone number, and may hide your
-/// email), where to search, then Luma. Everything after "Sign in" can be skipped.
+/// email), where to search, then Luma. Signing in is required; everything after it can be skipped.
+/// `returning` is someone who finished onboarding before but is signed out now: they only sign in.
 struct OnboardingView: View {
+    var returning = false
     var onFinish: () -> Void
     @EnvironmentObject private var state: AppState
     @ObservedObject private var location = LocationProvider.shared
@@ -102,15 +104,14 @@ struct OnboardingView: View {
                 if let n = outcome.name, name.isEmpty { name = n }
                 if let e = outcome.email, email.isEmpty { email = e }
                 relayEmail = outcome.relayEmail && email.isEmpty
+                state.refresh()
+                if returning { onFinish(); return }
                 // An account that already has details on another phone can skip straight on.
                 go(AnswerStore.shared.get("phone") != nil && !email.isEmpty ? .location : .details)
             }
             if let signInError {
                 Text(signInError).font(.footnote).foregroundStyle(.red).multilineTextAlignment(.center)
             }
-            Button("Continue without an account") { go(.details) }
-                .font(.subheadline.weight(.semibold))
-                .frame(minHeight: 44)
         }
     }
 

@@ -1,0 +1,1175 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Luma//What‘s Happening in San Francisco//EN
+X-WR-CALNAME:What‘s Happening in San Francisco
+X-WR-CALDESC:Luma Calendar
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+X-PUBLISHED-TTL:PT12H
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+BEGIN:VEVENT
+DTSTART:20261019T160000Z
+DTEND:20261019T230000Z
+DTSTAMP:20261019T142637Z
+ORGANIZER;CN="Steven Pousty":MAILTO:calendar-invite@lu.ma
+UID:evt-w6xzF6mnzgGp6ZF@events.lu.ma
+SUMMARY:PyTorch, Powering the Enterprise
+DESCRIPTION:Get up-to-date information at: https://luma.com/wjmtvwvw\n\nAd
+ dress:\nCheck event page for more details.\n\nPyTorch, Powering the Enterp
+ rise\nbrought to you by Red Hat, NVIDIA, and IBM\n\nPyTorch, and its ecosy
+ stem, such as vLLM, Ray, and Helion, have grown to become the foundation o
+ f the AI world. Along with this growth PyTorch has moved from the research
+  labs to power the largest Enterprise companies. Come learn and interact w
+ ith the companies helping to bring PyTorch to its full enterprise potentia
+ l, hosted by Red Hat, NVIDIA, and IBM.\nAgenda\n9:30–9:45 AM — PyTorch
+  and the Open Ecosystem Behind Enterprise AISpeaker: Stephen Watt (PyTorch
+  Board Member, Red Hat)How does an open source research…\n\nHosted by St
+ even Pousty & 4 others
+LOCATION:https://luma.com/event/evt-w6xzF6mnzgGp6ZF
+GEO:37.330543368335505;-121.88857689269503
+SEQUENCE:214583197
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261019T170000Z
+DTEND:20261020T040000Z
+DTSTAMP:20261019T142637Z
+ORGANIZER;CN="Chantel Allegakoen":MAILTO:calendar-invite@lu.ma
+UID:evt-oYJfnzeEecoe6vU@events.lu.ma
+SUMMARY:Arm Create: Hands-on AI with Google, Renesas & Nota AI
+DESCRIPTION:Get up-to-date information at: https://luma.com/w9n0o36l\n\nAd
+ dress:\nCheck event page for more details.\n\nLearn how to deploy and opti
+ mize AI workloads on Arm from cloud to edge through technical sessions, de
+ mos, and interactive experiences.\nExplore Gemma optimization, Google AI E
+ dge and LiteRT, PyTorch and ExecuTorch, power-aware profiling, agentic AI,
+  and physical AI. Hear from experts at Arm, Google DeepMind, Google, Renes
+ as, and Nota AI.\n\nWhat to expect\n💻 Explore cloud-to-edge AI workflow
+ s\nExplore AI technologies and workflows spanning cloud to edge, with tech
+ nical sessions and demos from Arm engineers and ecosystem experts.\n⚡ Tr
+ y interactive AI demos and challenges\nExplore agentic and…\n\nHosted by
+  Chantel Allegakoen & 3 others
+LOCATION:https://luma.com/event/evt-oYJfnzeEecoe6vU
+GEO:37.331563546633035;-121.89222740231864
+SEQUENCE:214583197
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261019T180000Z
+DTEND:20261019T233000Z
+DTSTAMP:20261019T142637Z
+ORGANIZER;CN="Brendan O'Leary":MAILTO:calendar-invite@lu.ma
+UID:evt-jAGUm2MPggH8J6w@events.lu.ma
+SUMMARY:Cline, Parallel, & Composio Hackathon
+DESCRIPTION:Get up-to-date information at: https://luma.com/m8euvq9n\n\nAd
+ dress:\nCheck event page for more details.\n\nA Cline x Composio x Paralle
+ l hackathon for Open Source AI Week\nEveryone's talking about closed perso
+ nal agents right now. We want to see what you can build in the open.\nCome
+  spend the day building your own personal agent with Cline, Composio, Para
+ llel, and open-source models. Bring a laptop and an idea, or find a teamma
+ te here and figure it out together. The only rule is that you open source 
+ what you build and share it.\nPrizes\n1st: NVIDIA DGX Spark\n2nd: $1,000 i
+ n Cline credits\n3rd: [~$500 prize, TBA]\nJudges\nMax Paulus, Senior Softw
+ are Engineer, Cline…\n\nHosted by Brendan O'Leary, Etisha Garg & Paralle
+ l Web Systems
+LOCATION:https://luma.com/event/evt-jAGUm2MPggH8J6w
+GEO:37.78252462456423;-122.41227556454989
+SEQUENCE:214583197
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261019T200000Z
+DTEND:20261020T003000Z
+DTSTAMP:20261019T142637Z
+ORGANIZER;CN="Build with Claude":MAILTO:calendar-invite@lu.ma
+UID:evt-7HiECgN35hBY2tb@events.lu.ma
+SUMMARY:Claude Workshop with Provectus - San Francisco
+DESCRIPTION:Get up-to-date information at: https://luma.com/claude-worksho
+ p-sf-oct-19\n\nAddress:\nCheck event page for more details.\n\nDirect acce
+ ss to Claude, the Anthropic team, and an afternoon built around the work y
+ ou actually do.\nThis Claude Workshop, presented with Provectus, is a half
+ -day product experience for business leaders who live in documents, spread
+ sheets, decks, and cross-tool workflows — Finance, Operations, Marketing
+ , HR, Legal, and Sales.\nIf you are in a technical role, we encourage you 
+ to view the calendar and register for a Claude Code Workshop. Please refra
+ in from registering for both sessions.\nPlease note: If you’re bringing 
+ your business laptop, make sure you have the Claude desktop app…\n\nHost
+ ed by Build with Claude & Provectus
+LOCATION:https://luma.com/event/evt-7HiECgN35hBY2tb
+GEO:37.79494477107481;-122.39531611419169
+SEQUENCE:214583197
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261020T000000Z
+DTEND:20261020T040000Z
+DTSTAMP:20261019T142637Z
+ORGANIZER;CN="Matt White":MAILTO:calendar-invite@lu.ma
+UID:evt-wCUX7vTN0mx9NIh@events.lu.ma
+SUMMARY:Open Source AI Week 2026 | Open Weight Debate Night
+DESCRIPTION:Get up-to-date information at: https://luma.com/592fcwx2\n\nAd
+ dress:\nCheck event page for more details.\n\nOpen Source AI Week 2026 | O
+ pen Weight Debate Night\nThe Open Weight Debate is where Open Source AI We
+ ek gets into discussion, opinions, and fun. We're bringing together sharp 
+ minds who actually like to debate and discuss with each other and putting 
+ them on stage to hash it out live.\nReal arguments, real examples, and rea
+ l dialogue about the questions that matter most to the future of open sour
+ ce AI from leaders shaping the AI ecosystem including Ion Stoica (UC Berke
+ ley, Databricks, Anyscale),  Percy Liang (Stanford, MARIN Project, Open At
+ hena), Ben Brooks (Black Forest Labs), Cheryl Cheng…\n\nHosted by Matt W
+ hite, GitHub & Open Intelligence Foundation
+LOCATION:https://luma.com/event/evt-wCUX7vTN0mx9NIh
+GEO:37.78284627463162;-122.39348320501524
+SEQUENCE:214583197
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261020T003000Z
+DTEND:20261020T040000Z
+DTSTAMP:20261019T142637Z
+ORGANIZER;CN="PlanetScale":MAILTO:calendar-invite@lu.ma
+UID:evt-sNFXcJrTHJyYyoS@events.lu.ma
+SUMMARY:THE SF DATABASE MEETUP: October
+DESCRIPTION:Get up-to-date information at: https://luma.com/ip56zybg\n\nAd
+ dress:\nPlanetScale\nSan Francisco, CA\nUnited States\n\nJoin us on Octobe
+ r 19th for the SF Database Meetup where we'll dive into the fundamentals o
+ f databases and learn about some new storage systems built for agents.\nAs
+  usual, also be giving away our newly refreshed Database hats, Neki sticke
+ rs and more! There’s limited spots available for this event so make sure
+  to RSVP.\nSpeakers:\nChristian Glassiognon, PlanetScale: What is a databa
+ se really?\nHunter Leath, Archil: Designing a cloud filesystem for agents 
+ at scale\nErik Dunteman, Modal: Overeasy, a branching filesystem for agent
+ s and RL\nSchedule:\n5:30–6:00 — Doors Open and Networking\n6:00–7:1
+ 5 —…\n\nHosted by PlanetScale & 4 others
+LOCATION:PlanetScale, 108 Natoma St, San Francisco, CA 94105, USA
+GEO:37.7871285;-122.39898659999999
+SEQUENCE:214583197
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261020T013000Z
+DTEND:20261020T040000Z
+DTSTAMP:20261019T142637Z
+ORGANIZER;CN="Founders on Tap":MAILTO:calendar-invite@lu.ma
+UID:evt-gHsIEU1iZwhjrak@events.lu.ma
+SUMMARY:AI agents to scale your startup
+DESCRIPTION:Get up-to-date information at: https://luma.com/bdfzpaib\n\nAd
+ dress:\nCheck event page for more details.\n\nHow do you actually use AI a
+ gents to scale your startup?\nYou have 12 tabs open and three jobs you hav
+ en’t hired for yet. What can an AI agent actually take off your plate?\n
+ Join Trevor Keith, founder and CEO of Solid, for a practical workshop on m
+ oving from asking AI questions to delegating real work.\nYou’ll learn:\n
+ 👉 Which tasks to hand over across GTM, operations, support, and enginee
+ ring\n👉 How to give agents the tools and context to finish the job\n
+ 👉 Where to set permissions, budgets, and human approvals\n👉 How to a
+ void spending more time managing agents than doing the work yourself\nBrin
+ g…\n\nHosted by Founders on Tap, Selina Li & Lyvia Chapman
+LOCATION:https://luma.com/event/evt-gHsIEU1iZwhjrak
+GEO:37.78633844492028;-122.4167376983234
+SEQUENCE:214583197
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261021T000000Z
+DTEND:20261021T040000Z
+DTSTAMP:20261019T142637Z
+ORGANIZER;CN="LMSYS Org":MAILTO:calendar-invite@lu.ma
+UID:evt-kEEwMQEK7LOx4Xj@events.lu.ma
+SUMMARY:SGLang Meetup with LinkedIn and LMCache
+DESCRIPTION:Get up-to-date information at: https://luma.com/zbp6a1e1\n\nAd
+ dress:\nLinkedIn Corporation - Building 950 (LSNR)\nSunnyvale, CA\nUnited 
+ States\n\nJoin SGLang, LinkedIn and LMCache for an AI Infra Meetup during 
+ Open Source AI Week!\nAfter a busy day at the conference, come unwind with
+  fellow engineers, researchers, and AI practitioners. We're bringing toget
+ her the people building and deploying real-world LLM serving systems for f
+ ocused technical talks, great food and drinks, and plenty of time to conne
+ ct with the community. Whether you're in town for PyTorch Conf or part of 
+ the Bay Area AI ecosystem, we'd love to have you join us.\nSchedule\n5:00 
+ PM: Doors open, drinks, and networking\n6:00 PM – 8:00 PM: Technical tal
+ ks from SGLang and…\n\nHosted by LMSYS Org, Qing Lan & Sundara Raman Ram
+ achandran
+LOCATION:LinkedIn Corporation - Building 950 (LSNR), 950 W Maude Ave, Sunn
+ yvale, CA 94085, USA
+GEO:37.39245;-122.0412877
+SEQUENCE:214583197
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261021T003000Z
+DTEND:20261021T033000Z
+DTSTAMP:20261019T142637Z
+ORGANIZER;CN="Bryan":MAILTO:calendar-invite@lu.ma
+UID:evt-55g8vvkP6gGnHkb@events.lu.ma
+SUMMARY:GTM & Marketing Hackathon by Granola x Anthropic
+DESCRIPTION:Get up-to-date information at: https://luma.com/granola-gtm-ha
+ ckathon\n\nAddress:\nCheck event page for more details.\n\nWhat would you 
+ build if you had a dedicated evening to experiment with Claude and Granola
+ ?\nJoin us at Granola SF for a hackathon for GTM and Marketing operators!
+ \nNo technical background needed. We’re bringing together a curated grou
+ p of GTM and Marketing leaders to use your Granola context with our MCP, b
+ uild with Claude, and explore how AI can change the way we work and build 
+ something useful along the way.\nYou’ll get Claude API credits to build 
+ with on the night, before sharing what you’ve made and putting it to our
+  judges. Come with an idea, a problem you want to solve or just some…\n
+ \nHosted by Bryan, Sam Arnold & Shreman Shrestha
+LOCATION:https://luma.com/event/evt-55g8vvkP6gGnHkb
+GEO:37.78076522442323;-122.40030847671842
+SEQUENCE:214583197
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261021T010000Z
+DTEND:20261021T040000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="OpenClaw":MAILTO:calendar-invite@lu.ma
+UID:evt-4sbLgibxDlbbg3Y@events.lu.ma
+SUMMARY:OpenClaw & Friends Meetup w/ NVIDIA & Microsoft
+DESCRIPTION:Get up-to-date information at: https://luma.com/oah05xax\n\nAd
+ dress:\nCheck event page for more details.\n\nYour AI. Your rules. Better 
+ together.\nJoin the OpenClaw Foundation, NVIDIA and Microsoft during Op
+ en Source for AI Week for a meetup about AI agents you can own, understan
+ d, and control.\n\n6:00 PM Doors open, arrivals and refreshments\n6:20 PM 
+ Welcome and short demos from OpenClaw, NVIDIA and Microsoft\n6:45 PM OpenC
+ law & Friends panel: approximately 15 minutes of moderated discussion and 
+ 15 minutes of audience Q&A\n7:20 PM Informal networking begins\n9:00 PM E
+ vent Close\nWe’re bringing together the people building open-source AI a
+ gents, the projects pushing them forward, and everyone who believes…\n\n
+ Hosted by OpenClaw, Graham McBain & Jason Storbeck
+LOCATION:https://luma.com/event/evt-4sbLgibxDlbbg3Y
+GEO:37.78338275721743;-122.3892671658633
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261021T013000Z
+DTEND:20261021T043000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Andrey Cheptsov":MAILTO:calendar-invite@lu.ma
+UID:evt-NCvIBdsLtFZwQ69@events.lu.ma
+SUMMARY:AI Infra Night @PyTorchCon with dstack, Crusoe, and SGLang
+DESCRIPTION:Get up-to-date information at: https://luma.com/6j69xyal\n\nAd
+ dress:\nCheck event page for more details.\n\nJoin dstack, Crusoe, and SGL
+ ang for an AI Infra Night in San Jose during PyTorch Conference.\nAfter a 
+ full day at the conference, come unwind with GPU experts, ML engineers, AI
+  researchers, and AI infra enthusiasts working on GPUs, training, inferenc
+ e, and open-source AI systems.\nExpect drinks, food, and plenty of time to
+  talk shop, compare notes on what you saw at the conference, and meet the 
+ dstack and Crusoe teams.\nSchedule\n6:30 PM: Doors open, drinks, and snack
+ s\n7:00 PM – 9:30 PM: Networking, food, and drinks\nAdditional informati
+ on\nA short walk from the San Jose Convention Center. Exact…\n\nHosted b
+ y Andrey Cheptsov & 4 others
+LOCATION:https://luma.com/event/evt-NCvIBdsLtFZwQ69
+GEO:37.33449641500109;-121.89157832238901
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261021T013000Z
+DTEND:20261021T033000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Laravel":MAILTO:calendar-invite@lu.ma
+UID:evt-1jHAzOec1ljMgwO@events.lu.ma
+SUMMARY:Founders Panel: The Agentic Stack
+DESCRIPTION:Get up-to-date information at: https://luma.com/laravel-43ty\n
+ \nAddress:\nCheck event page for more details.\n\nFounders & leaders from 
+ Laravel, PlanetScale, and WorkOS talk building and scaling on their agent 
+ stacks.\n\nThey’ll discuss:\nWhere agents are helping\nRisks they've enc
+ ountered\nWhat's working, what isn't\nWhy this might be the best time to e
+ ver be building.\nThe panel:\nTaylor Otwell (Founder & CEO, Laravel)\nSam 
+ Lambert (CEO, PlanetScale)\nMichael Grinich (Founder & CEO, WorkOS)\nHoste
+ d by Aaron Francis (VP of Marketing & Community, Laravel)\nSpots are limit
+ ed, you'll be notified if you're in.\n\nHosted by Laravel, WorkOS & Planet
+ Scale
+LOCATION:https://luma.com/event/evt-1jHAzOec1ljMgwO
+GEO:37.77991529530128;-122.39527549932251
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261021T020000Z
+DTEND:20261021T040000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Big Brain Bay Area":MAILTO:calendar-invite@lu.ma
+UID:evt-dEinwldGjhodhQA@events.lu.ma
+SUMMARY:The (Deeply Misunderstood) Evolutionary Science of Attraction
+DESCRIPTION:Get up-to-date information at: https://luma.com/n3kog8wp\n\nAd
+ dress:\nThe Foundry SF\nSan Francisco, CA\nUnited States\n\n💘 What if e
+ verything evolutionary psychology told you about dating was wrong?\nFor de
+ cades, a buzzy branch of science has spread a deeply flawed story about ro
+ mantic relationships, cloaking itself in the language of incontrovertible 
+ Darwinian fact. Evolutionary psychology claims our minds were shaped by pr
+ imal drives that pit the genders against each other, from the myth that me
+ n are wired to be promiscuous to the notion that wealth, status, and beaut
+ y are the ultimate aphrodisiacs.\nIn this talk, UC Davis psychology profes
+ sor Paul Eastwick, author of Bonded by Evolution and co-host of the…\n\n
+ Hosted by Big Brain Bay Area
+LOCATION:The Foundry SF, 1425 Folsom St, San Francisco, CA 94103, USA
+GEO:37.7723519;-122.41301369999998
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261021T220000Z
+DTEND:20261021T233000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="South Park Commons":MAILTO:calendar-invite@lu.ma
+UID:evt-neSdW0i3Dr6eCBn@events.lu.ma
+SUMMARY:-1 to Anduril with Trae Stephens
+DESCRIPTION:Get up-to-date information at: https://luma.com/trae-stephens-
+ spc\n\nAddress:\nCheck event page for more details.\n\nSouth Park Commons 
+ is delighted to host Trae Stephens as part of our -1 to Now series.\nEvent
+  Details\n3:00pm: Doors Open + Mingling\n3:30-4:30pm: Fireside Chat\n\nTra
+ e is a General Partner at Founders Fund. He is also Co-founder and Executi
+ ve Chairman of Anduril Industries, a defense technology company focused on
+  autonomous systems.\nPreviously, Trae was an early employee at Palantir T
+ echnologies, where he led teams focused on growth in the intelligence/defe
+ nse space as well as international expansion, helping large organizations 
+ solve their hardest data analysis problems. He was also an integral…\n\n
+ Hosted by South Park Commons
+LOCATION:https://luma.com/event/evt-neSdW0i3Dr6eCBn
+GEO:37.781369151730935;-122.39602074038247
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261022T003000Z
+DTEND:20261022T033000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Jason Zhao":MAILTO:calendar-invite@lu.ma
+UID:evt-xcSNTHZFoxJRTdJ@events.lu.ma
+SUMMARY:America 250: A Foreign Admirer's View of a Republic in Crisis
+DESCRIPTION:Get up-to-date information at: https://luma.com/9w7acrdc\n\nAd
+ dress:\nSan Francisco War Memorial & Performing Arts Center\nSan Francisco
+ , CA\nUnited States\n\nJoin us at the SF War Memorial's Green Room for a l
+ ecture from Os Guinness.\nOs Guinness is an author, social critic, and gre
+ at-great-great grandson of Arthur Guinness, the Dublin brewer. Os has writ
+ ten or edited more than 40 books that offer valuable insight into the cult
+ ural, political, and social contexts in which we all live. He completed hi
+ s undergraduate degree at the University of London and his D.Phil in the s
+ ocial sciences from Oriel College, Oxford.\n"Is the Republic headed for re
+ demption or for ruin?\nFree societies are rare, and lasting free societies
+  are rarer still. Os Guinness…\n\nHosted by Jason Zhao & Bohan Lou
+LOCATION:San Francisco War Memorial & Performing Arts Center, 401 Van Ness
+  Ave #110, San Francisco, CA 94102, USA
+GEO:37.7796826;-122.42070590000002
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261022T003000Z
+DTEND:20261022T033000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Kristopher Floyd":MAILTO:calendar-invite@lu.ma
+UID:evt-wVMBaVuSsbEQgJL@events.lu.ma
+SUMMARY:Bay Area Frontier Research Club #28 | Cell Biology x AI: From Canc
+ er Mechanisms to Virtual Cells (dinner + paper discussion @ Stanford)
+DESCRIPTION:Get up-to-date information at: https://luma.com/dj22bayb\n\nAd
+ dress:\nCheck event page for more details.\n\nHow do we go from understand
+ ing what goes wrong inside a cell to finding where a drug could intervene
+ —and can AI help us get there faster?\nThis evening at Stanford brings t
+ ogether a new discovery in colorectal cancer and the effort to build virtu
+ al cells that could help researchers decide which interventions to test ne
+ xt.\nGanesh Pusapati, PhD, a Senior Research Scientist in Stanford Biochem
+ istry’s Rohatgi Lab, co-led a study published in Nature Genetics this Ju
+ ly that uncovered a new therapeutic vulnerability in colorectal cancer. Hi
+ s team identified roughly 150 previously unreported…\n\nHosted by Kristo
+ pher Floyd
+LOCATION:https://luma.com/event/evt-wVMBaVuSsbEQgJL
+GEO:37.42949902440095;-122.17573199191824
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261022T003000Z
+DTEND:20261022T030000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Temporal Team":MAILTO:calendar-invite@lu.ma
+UID:evt-zK5H9iq3UujkOHB@events.lu.ma
+SUMMARY:Durable AI (October Edition)
+DESCRIPTION:Get up-to-date information at: https://luma.com/durable-ai-oct
+ ober\n\nAddress:\n500 Sansome St\nSan Francisco, CA\nUnited States\n\nDura
+ ble AI w/ Temporal & Kernel\nJoin us for the next edition of the Durable A
+ I Meetup series! This time on what happens to an agent between the first r
+ equest and the last one. A long-running agent needs three things to make i
+ t through: it has to survive a crash, it has to keep working against the s
+ ystems it acts on, and you have to be able to see what it did. Most stacks
+  solve one of those and hope about the other two.\n\nWhat's Happening:\n
+ 🎤 Lightning talks & demos from teams building agents that run long and
+ \nsurvive failure\n🤝 Networking with engineers and founders shipping ag
+ ents into…\n\nHosted by Temporal Team & 3 others
+LOCATION:500 Sansome St, San Francisco, CA 94111, USA
+GEO:37.7950908;-122.40121479999999
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261022T003000Z
+DTEND:20261022T040000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="GitHub Policy Events":MAILTO:calendar-invite@lu.ma
+UID:evt-Zs6sZfHCr2TkEBD@events.lu.ma
+SUMMARY:Open Source AI + Policy Happy Hour
+DESCRIPTION:Get up-to-date information at: https://luma.com/96ykgzil\n\nAd
+ dress:\nGitHub\nSan Francisco, CA\nUnited States\n\nOpen Source + AI Polic
+ y Happy Hour\nOpen source AI is in the spotlight, drawing growing attentio
+ n from policymakers, researchers, industry, and civil society. Building on
+  the momentum of Open Source AI Week, this event will bring together persp
+ ectives from across the community to think big picture about how we can ad
+ vance an AI ecosystem that is open, secure, competitive, and innovative.\n
+ Through two conversations, we’ll explore the policies and shared foundat
+ ions shaping the future of open source AI, and where cross-sector collabor
+ ation can help move the ecosystem forward.\nThe Global Policy…\n\nHosted
+  by GitHub Policy Events
+LOCATION:GitHub, 88 Colin P Kelly Jr St, San Francisco, CA 94107, USA
+GEO:37.7822664;-122.39116439999998
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261022T003000Z
+DTEND:20261022T030000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Sentry":MAILTO:calendar-invite@lu.ma
+UID:evt-ZzNT7mj4zu3VsR3@events.lu.ma
+SUMMARY:Support Is an Engineering Problem Now — Plain × Sentry
+DESCRIPTION:Get up-to-date information at: https://luma.com/plain-sentry\n
+ \nAddress:\nCheck event page for more details.\n\nAn evening at Sentry's S
+ F office for support and customer-facing engineers on how agents, MCP, and
+  APIs are changing the work, and how to move faster with them.\nWhat you'l
+ l walk away with\nWhere agents actually resolve technical issues today, an
+ d where they still hand off to a person\nHow teams are wiring errors, logs
+ , and product data into support through MCP and APIs, so investigations st
+ art with context instead of a blank ticket\nWhat the support engineer role
+  looks like once triage is automated, and which skills are worth building 
+ now\nA short list of things to try in your own stack next…\n\nHosted by 
+ Sentry & Plain
+LOCATION:https://luma.com/event/evt-ZzNT7mj4zu3VsR3
+GEO:37.79301552275367;-122.39793477382491
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261022T004500Z
+DTEND:20261022T014500Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Cloudflare Developer":MAILTO:calendar-invite@lu.ma
+UID:evt-uHOc5s8AOpzQiNf@events.lu.ma
+SUMMARY:Cloudflare Open Source Happy Hour: The Pre-func(tion) Party
+DESCRIPTION:Get up-to-date information at: https://luma.com/ddz6vkfs\n\nAd
+ dress:\n101 Townsend St\nSan Francisco, CA\nUnited States\n\nCloudflare Op
+ en Source Happy Hour: The Pre-func(tion) Party\nBefore func(tion) takes ov
+ er Oracle Park, start the night at the Cloudflare San Francisco office wit
+ h drinks, food, a DJ, and some of the people behind the open source tools 
+ you use every day.\nYour hosts\nEvan You, creator of Vue and Vite\nFred Sc
+ hott & Matthew Phillips, co-creators of Astro\nCharlie Gleason, Replicate
+ \nRyan Dahl & Bert Belder, who just joined Cloudflare from Deno\nThe plan
+ \n5:45 PM: Doors open with drinks, food, and music\n6:05 PM: Quick intros 
+ from the hosts\n6:20 PM: Hang out, meet people, ask questions\n6:45 PM: We
+  walk…\n\nHosted by Cloudflare Developer
+LOCATION:101 Townsend St, San Francisco, CA 94107, USA
+GEO:37.7802225;-122.39058739999999
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261022T010000Z
+DTEND:20261022T033000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Aaron Blotnick":MAILTO:calendar-invite@lu.ma
+UID:evt-FRoc81huGegMPpl@events.lu.ma
+SUMMARY:A World Model for Biology: An Evening with Bioptimus CEO Jean-Phil
+ ippe Vert
+DESCRIPTION:Get up-to-date information at: https://luma.com/mupawovc\n\nAd
+ dress:\nCheck event page for more details.\n\nBits in Bio SF and MBC BioLa
+ bs are proud to present A World Model for Biology: An Evening with Bioptim
+ us CEO Jean-Philippe Vert.\nBioptimus is a Paris-based team building found
+ ation models for biology. They are bringing their world model, M-Optimus, 
+ to San Francisco after showing it in London. Come learn what they are buil
+ ding and talk about foundation models, world models, and the future of sim
+ ulated biology.\nM-Optimus is the first system to combine histology, singl
+ e-cell, and spatial transcriptomics in one model. It is built on the same 
+ foundation as H-Optimus-1, ranked first on PathBench…\n\nHosted by Aaron
+  Blotnick & 5 others
+LOCATION:https://luma.com/event/evt-FRoc81huGegMPpl
+GEO:37.76508841890912;-122.3972724884337
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261022T010000Z
+DTEND:20261022T040000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="PostHog":MAILTO:calendar-invite@lu.ma
+UID:evt-sB8mj9vA6EyHJ4q@events.lu.ma
+SUMMARY:Lessons from Open Source DevTools Founders w/ PostHog, Cline and m
+ ore
+DESCRIPTION:Get up-to-date information at: https://luma.com/bfgu761e\n\nAd
+ dress:\nHogpatch\nSan Francisco, CA\nUnited States\n\nFor OSS Week, PostHo
+ g and 1984 Ventures are hosting an evening at Hogpatch with founders who b
+ uild in the open. There will be three short round-table discussions follow
+ ed by drinks and time to talk.\nWho should come: founders, maintainers and
+  engineers building or adopting open source AI tools. Come prepared with q
+ uestions. We want this to be as engaging as possible.\nOpen Source as a GT
+ M Strategy\nOperators from PostHog, Cline and Unikraft on using open sourc
+ e to reach developers, and how to turn usage into a business without alien
+ ating the community that got you there.\nOpen Source AI and…\n\nHosted b
+ y PostHog & 1984 VC
+LOCATION:Hogpatch, 2360 3rd St, San Francisco, CA 94107, USA
+GEO:37.7597267;-122.3888066
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261022T010000Z
+DTEND:20261022T040000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Jack Henchy":MAILTO:calendar-invite@lu.ma
+UID:evt-U30Rm28Vmo12XoD@events.lu.ma
+SUMMARY:Long Horizon After Party
+DESCRIPTION:Get up-to-date information at: https://luma.com/72t0k5cl\n\nAd
+ dress:\nSt. Francis Yacht Club\nSan Francisco, CA\nUnited States\n\nJoin t
+ he waiting list for admission. Capacity is limited; spots are by acceptanc
+ e only, and we'll be operating on a first-come, first-served basis.\n\n Lo
+ ng Horizon After Party | Hosted by Encord, sponsored by CoreWeave & LanceD
+ B\nThe summit's done. The robots are packed away. The future has been disc
+ ussed. Now it's time for a drink with a view.\nTo close out Long Horizon, 
+ we're hosting an exclusive 200-person afterparty at the St. Francis Yacht 
+ Club in partnership with CoreWeave and LanceDB. It sits right on the water
+ , looking out at the Golden Gate Bridge and Alcatraz.\nCome for the views 
+ and…\n\nHosted by Jack Henchy & 6 others
+LOCATION:St. Francis Yacht Club, 99 Yacht Rd, San Francisco, CA 94123, USA
+GEO:37.8073127;-122.44678470000001
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261022T020000Z
+DTEND:20261022T040000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Institute for Ethics and the Common Good":MAILTO:calendar-invite@lu.ma
+UID:evt-kYSVWGKevY4cs1T@events.lu.ma
+SUMMARY:Ancient Prompts-A technologist, a philosopher, and a theologian on
+  being human in the age of AI
+DESCRIPTION:Get up-to-date information at: https://luma.com/i1ynqohz\n\nAd
+ dress:\nFox Theatre\nRedwood City, CA\nUnited States\n\nCome as you are 
+ — this is for technologists, students, church folks, and anyone who's cu
+ rious. No background required.\nYou'll hear from a technologist, a philoso
+ pher, and a theologian, talking it through together:\nMichael Boone — NV
+ IDIA\nMeghan Sullivan — Notre Dame Institute for Ethics and the Common G
+ ood\nPaul Taylor — Bay Area Center for Faith, Work & Tech\nThe Question
+ \nWhat does it mean to be human when machines can think, create, and even 
+ talk like us? This isn't about whether AI will take your job, or whether i
+ t's "conscious." It's the deeper question underneath both: if a computer c
+ an do…\n\nHosted by Institute for Ethics and the Common Good & Center fo
+ r Ethical Intelligence
+LOCATION:Fox Theatre, 2215 Broadway, Redwood City, CA 94063, USA
+GEO:37.4863153;-122.2296145
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261023T000000Z
+DTEND:20261023T030000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Nucleate HQ":MAILTO:calendar-invite@lu.ma
+UID:evt-AUkA4modtuEXLOe@events.lu.ma
+SUMMARY:Boos in Biotech Happy Hour
+DESCRIPTION:Get up-to-date information at: https://luma.com/s8gi4oqd\n\nAd
+ dress:\nCheck event page for more details.\n\nJoin us for Boos in Bio, a H
+ alloween-themed biotech networking night bringing together early-stage fou
+ nders, builders, investors, and industry experts for an evening of drinks,
+  conversation, and a little spooky fun.\nThe theme:\nThe frightful things 
+ about bootstrapping/scaling up in Biotech\nCome hear candid perspectives, 
+ ask your questions, and learn from the experiences of other early-stage co
+ mpanies.\n🎃 What's in store\n👻 Fireside chat + audience Q&A\n🍻 Fo
+ od, drinks & biotech networking\n🧟 Costume contest with prizes\n🩸 Po
+ tentially terrifying founder horror stories — because every startup has
+ …\n\nHosted by Nucleate HQ & 16 others
+LOCATION:https://luma.com/event/evt-AUkA4modtuEXLOe
+GEO:37.50203381989547;-122.24807136421768
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261023T000000Z
+DTEND:20261023T030000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Khalil Kaddoura":MAILTO:calendar-invite@lu.ma
+UID:evt-YEfJqnmlv91WHY4@events.lu.ma
+SUMMARY:The Next Frontier in AI x Bio: Panel Discussion and Selected Start
+ up Pitches
+DESCRIPTION:Get up-to-date information at: https://luma.com/o28sg2pn\n\nAd
+ dress:\nAWS Builder Loft\nSan Francisco, CA\nUnited States\n\nWhat would i
+ t take to scale scientific intelligence into autonomous systems that gener
+ ate knowledge and advance research programs end to end?\nWhat does the nex
+ t scaling paradigm in AI x Bio look like? Where is AI already excelling in
+  scientific work, and where are the largest opportunities for improvement?
+  What would artificial superintelligence mean for science, and what remain
+ s to be proven? Where is the frontier headed, which new markets will emerg
+ e, and where can startups win?\nThese questions will define the next decad
+ e of science, and we're bringing together some of the people best…\n\nHo
+ sted by Khalil Kaddoura & 4 others
+LOCATION:AWS Builder Loft, First Market Tower, 525 Market St Entrance, San
+  Francisco, CA 94105, USA
+GEO:37.7904122;-122.39934480000001
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261023T010000Z
+DTEND:20261023T033000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Brendan Carney":MAILTO:calendar-invite@lu.ma
+UID:evt-hNagV2uPIUmDUAi@events.lu.ma
+SUMMARY:Craft at Speed: Linear × Granola × Figma
+DESCRIPTION:Get up-to-date information at: https://luma.com/granola-sf-lin
+ ear\n\nAddress:\nCheck event page for more details.\n\nCraft at Speed is f
+ or engineers who want to talk about shipping polished software without slo
+ wing down. How do small teams ship software people love, fast, without a Q
+ A department or a design handoff step?\n\nWe'll hear from Brendan from Lin
+ ear and Maria from Figma on how they approach it.\n\nBrendan Carney, Engin
+ eering Lead, Linear\nBrendan will walk through why Linear has no separate 
+ QA function, why there's no design-to-eng handoff, and how a small team ke
+ eps the bar high while shipping weekly.\n\nMaria Kazandjieva, Engineering 
+ Lead, Figma\nMaria will share how engineers, designers, and PMs can…\n\n
+ Hosted by Brendan Carney & Shreman Shrestha
+LOCATION:https://luma.com/event/evt-hNagV2uPIUmDUAi
+GEO:37.781399872173495;-122.40476782527406
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261023T010000Z
+DTEND:20261023T043000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Eric Michaud":MAILTO:calendar-invite@lu.ma
+UID:evt-j3Y4WjHy5r4NZZh@events.lu.ma
+SUMMARY:LIVE MUSIC: Folk Songs for the AI Age with Jamie Simon and Eric Mi
+ chaud
+DESCRIPTION:Get up-to-date information at: https://luma.com/n6j7vvod\n\nAd
+ dress:\nCheck event page for more details.\n\nIn decades past, folk songs 
+ have helped make sense of the times: to tell stories, poke at power, mourn
+  what’s being lost, and imagine what might come next.\nWoody Guthrie san
+ g about inequality and labor. Pete Seeger sang about war and civil rights.
+  Bob Dylan sang about a world that seemed to be changing underneath everyo
+ ne’s feet.\nSo what does folk music sound like in the age of AI?\nCome f
+ ind out with researchers and musicians Jamie Simon and Eric Michaud—who,
+  when they trade their laptops for guitars, are Rage Against the Turing Ma
+ chine. Join for a night of original folk songs about AI, San…\n\nHosted 
+ by Eric Michaud & Jamie Simon
+LOCATION:https://luma.com/event/evt-j3Y4WjHy5r4NZZh
+GEO:37.776194211360384;-122.42093503033169
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261023T020000Z
+DTEND:20261023T050000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Cassindy Chao":MAILTO:calendar-invite@lu.ma
+UID:evt-1b7VeEoFlWn5Un5@events.lu.ma
+SUMMARY:Coffee Meets Mahjong 🀄️💕
+DESCRIPTION:Get up-to-date information at: https://luma.com/1gv9ji29\n\nAd
+ dress:\nFang\nSan Francisco, CA\nUnited States\n\nMahjong, mingling, and m
+ aybe your perfect match. 🀄️\nCoffee Meets Bagel and Matchmaker Cassin
+ dy are taking over Fang Restaurant for a night of tiles, bites, drinks, an
+ d a little matchmaking.   💕 Chef Kathy Fang has a lovely bagel/noshing 
+ platter for all of us!\nBefore the event, you’ll fill out a short questi
+ onnaire that determines your secret compatibility tile. Then, during the n
+ ight, it’s up to you to find the person with your matching tile 👀\nAl
+ ong the way, learn to play mahjong (or show off your skills), meet new peo
+ ple, and see where the night takes you.  Beginners welcome\nYour ticket…
+ \n\nHosted by Cassindy Chao & Coffee Meets Bagel
+LOCATION:Fang, 660 Howard St, San Francisco, CA 94105, USA
+GEO:37.785756000000006;-122.39980149999998
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261023T020000Z
+DTEND:20261023T040000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Era ✴":MAILTO:calendar-invite@lu.ma
+UID:evt-L8XwFXVJUpMfGzq@events.lu.ma
+SUMMARY:every thing computer | exhibition opening at TIAT
+DESCRIPTION:Get up-to-date information at: https://luma.com/everythingcomp
+ uter\n\nAddress:\ntiat\nSan Francisco, CA\nUnited States\n\nComputers have
+  become remarkably powerful, yet the way we interact with them remains uni
+ formly flat. We click, tap, type, swipe, and increasingly, prompt, all on 
+ the same rectangles and screens.\nThis exhibition asks what else a compute
+ r might be.\nBringing together artists, designers, and technologists worki
+ ng across playful computing and experimental interfaces. The exhibition ex
+ plores computers that invite different forms of interaction: machines that
+  are tactile, physical, spatial, strange, social, embodied, or alive to th
+ eir surroundings. Here, computation becomes raw material for play and…\n
+ \nHosted by Era ✴
+LOCATION:tiat, 151 Powell St, San Francisco, CA 94102, USA
+GEO:37.7861601;-122.4082452
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261024T040000Z
+DTEND:20261024T090000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="BOX SF":MAILTO:calendar-invite@lu.ma
+UID:evt-bmmVKjCgDFoJNbi@events.lu.ma
+SUMMARY:BOXOWEEN
+DESCRIPTION:Get up-to-date information at: https://luma.com/5q6cxdme\n\nAd
+ dress:\nClub Waziema\nSan Francisco, CA\nUnited States\n\nbox is a sapphic
+  party series for lesbians and those who date them <3\nIT'S BOXOWEEN!!!!!
+ \ncome celebrate halloween a week early: costumes & dancing are mandatory.
+  boxoween boxoween boxoween!!! we have some tricks up our sleeve for this 
+ one …\ncostume contest 9:30-10p with prizes for top 3 costumes.\npower h
+ our b2b DJ dance set from 11-1am.\nDJs: OSHE, Ali Stack & Katrina Allick\n
+ see you there xx.\n—-\n21+ event // suggested age 25+. no refunds availa
+ ble. box is a queer, inclusive space for all members of the LGBTQIA+ commu
+ nity ♡\naccessibility information: the bar is on ground floor, their is 
+ a pool…\n\nHosted by BOX SF
+LOCATION:Club Waziema, 543 Divisadero St, San Francisco, CA 94117, USA
+GEO:37.7746527;-122.4379523
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261024T160000Z
+DTEND:20261024T193000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="The Fairway Social Club":MAILTO:calendar-invite@lu.ma
+UID:evt-x4nvbCGP5hJqTE7@events.lu.ma
+SUMMARY:Nine-Hole Shotgun Scramble: The Girls are Taking Over the Course 
+ 💗
+DESCRIPTION:Get up-to-date information at: https://luma.com/v2uw1zdx\n\nAd
+ dress:\nGolden Gate Park Golf Course\nSan Francisco, CA\nUnited States\n\n
+ Your Saturday morning plans just got better because the girls are taking o
+ ver the golf course!!\nJoin us as we rent out the entire course for a wome
+ n-only shotgun scramble, where every fairway, green, and tee box is filled
+  with Fairway Social Club members. It's not every day the course belongs t
+ o the girls. 💗\nWe'll tee off together in a shotgun start, with every g
+ roup beginning at the same time from different holes before making their w
+ ay around the course in a relaxed scramble format. Come for the golf, stay
+  for the brunch, new friends, and a Saturday morning spent outside with an
+  incredible…\n\nHosted by The Fairway Social Club
+LOCATION:Golden Gate Park Golf Course, 970 47th Ave, San Francisco, CA 941
+ 21, USA
+GEO:37.7684225;-122.5050846
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261024T210000Z
+DTEND:20261025T010000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="baybookfest 🌐":MAILTO:calendar-invite@lu.ma
+UID:evt-RDk37E2ozP53hyo@events.lu.ma
+SUMMARY:BABF Halloween Book Fair
+DESCRIPTION:Get up-to-date information at: https://luma.com/8vabvdpz\n\nAd
+ dress:\nTwo Pitchers Brewing Company\nOakland, CA\nUnited States\n\nThis y
+ ear's Boo-k Fair will feature indie presses with specially curated scary s
+ tock, bookish vendors, hands-on arts and crafts, a Silent Book Club meetup
+ , and a book swap table where you can leave a scary book and take a scary 
+ book.\nCome enjoy beer from Two Pitchers Brewery and food from Lovely’s 
+ on a spooky fall day in the Bay.\nSilent Reading will be 3-5 pm in the ind
+ oor mezzanine.\nHere are the indie presses joining us:\nSming Sming Books
+ \nNorth Atlantic Books\nHaymarket Books\nAunt Lute\nSistah Scifi\nTransit 
+ Books\nWeavers Press\nCity Lights Books\nReed Magazine\nSociety for the Pr
+ omotion of…\n\nHosted by baybookfest 🌐
+LOCATION:Two Pitchers Brewing Company, 2344 Webster St, Oakland, CA 94612,
+  USA
+GEO:37.812930699999995;-122.2648796
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261024T230000Z
+DTEND:20261025T050000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="UNDSCVRD SF":MAILTO:calendar-invite@lu.ma
+UID:evt-1peVuMKfBJcPGzC@events.lu.ma
+SUMMARY:UNDSCVRD Golden Hour Night Market
+DESCRIPTION:Get up-to-date information at: https://luma.com/raipa01b\n\nAd
+ dress:\n330 Ritch St\nSan Francisco, CA\nUnited States\n\n✦ UNDISCOVERED
+  SF\nSan Francisco’s First Night Market Is Back\n\n\nTen years ago, Undi
+ scovered started the trend of night markets. Now, we return during golden 
+ hour.\nThis year marks a special milestone — join us as we celebrate 10 
+ seasons of community, creativity, and cultural pride! For our second hub, 
+ we are so excited to bring back UNDISCOVERED SF Season 10: the Golden Hour
+  Night Market in partnership with Victory Hall.\nNestled in the fabled Rit
+ ch Street Alley, Victory Hall has been a cornerstone of SoMa since 1908 
+ — home to the legendary 330 Ritch Nightclub and a long legacy of music,
+ …\n\nHosted by UNDSCVRD SF & Make It Mariko
+LOCATION:330 Ritch St, San Francisco, CA 94107, USA
+GEO:37.7792165;-122.39426410000002
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261025T180000Z
+DTEND:20261026T000000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="fredy liu":MAILTO:calendar-invite@lu.ma
+UID:evt-NjDJdhyNBorejA8@events.lu.ma
+SUMMARY:The Bay Area’s biggest dumpling party is back. 🥟
+DESCRIPTION:Get up-to-date information at: https://luma.com/39w64tqs\n\nAd
+ dress:\nFerry Building\nSan Francisco, CA\nUnited States\n\nSan Francisco
+ ’s World of Dumplings returns to the Ferry Building on Sunday, October 2
+ 5 for a free, all-day celebration of dumplings, food, culture and communit
+ y.\nMore than a food festival, World of Dumplings brings communities toget
+ her through food and shared stories to build belonging and connection.\nMo
+ re than 13,000 people attended last year, with 45+ local restaurants and b
+ usinesses taking part. This year, expect dumplings from cultures around th
+ e world, cooking demos, live performances, community programming and more.
+ \nWorld of Dumplings is created and produced by Asians Are Strong, a…\n
+ \nHosted by fredy liu & Hudson Liao
+LOCATION:1 Ferry Building, San Francisco, CA 94105, USA
+GEO:37.7954425;-122.3936136
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261025T220000Z
+DTEND:20261026T010000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Sasmini Bandara":MAILTO:calendar-invite@lu.ma
+UID:evt-TQ7X2M8fwYzRm2E@events.lu.ma
+SUMMARY:Read at the Beach ft Sunset + Bonfire 🌊📚
+DESCRIPTION:Get up-to-date information at: https://luma.com/readatthebeach
+ \n\nAddress:\nCheck event page for more details.\n\nRead at the Beach 🌊
+ 📚\nRead in the Park × Sunset O’Clock\nBring your book and read with 
+ us by the ocean.\nFor this special edition, Read in the Park and Sunset O
+ ’Clock are taking our usual reading afternoon to Ocean Beach.\nWe’ll s
+ pend the first part of the afternoon reading together, then move into smal
+ l-group conversations before staying for sunset, a bonfire, and time to ha
+ ng out by the water.\n📚 How the afternoon goes\n3:00–3:30 PM → Arri
+ ve, check in, and get settled\n3:30–4:30 PM → Silent reading by the oc
+ ean\n4:30–5:30 PM → Small-group conversations + book recommendations\n
+ 5:30 PM onward →…\n\nHosted by Sasmini Bandara & 8 others
+LOCATION:https://luma.com/event/evt-TQ7X2M8fwYzRm2E
+GEO:37.768185678975456;-122.50914650593651
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261027T010000Z
+DTEND:20261027T040000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Jana Iris":MAILTO:calendar-invite@lu.ma
+UID:evt-KJ6nUmIHekr3Hzn@events.lu.ma
+SUMMARY:Are We Running Too Many Agents?
+DESCRIPTION:Get up-to-date information at: https://luma.com/0qr6bxcw\n\nAd
+ dress:\nSentry\nSan Francisco, CA\nUnited States\n\nHave you read ETOOMANY
+ THINGS? Run Fewer Agents, the recent blog post by exe co-founder Josh?\nEv
+ eryone seems to be building software factories these days. More agents, mo
+ re tasks running in parallel, more dashboards to keep track of everything.
+  But is more actually better?\nThe post sparked a fun discussion online, a
+ nd we thought it would be even more fun to continue the conversation in pe
+ rson.\nSpeakers\nJosh Bleecher Snyder, co-founder of exe\nJosh Wills, engi
+ neering at DatologyAI\nBeyang Liu, amplifying human agency at Amp, prev. f
+ ounder of Sourcegraph\nThis will also be our first "official"…\n\nHosted
+  by Jana Iris & exe
+LOCATION:Sentry, 45 Fremont St, San Francisco, CA 94105, USA
+GEO:37.7912489;-122.3971488
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261027T153000Z
+DTEND:20261028T010000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="incident.io":MAILTO:calendar-invite@lu.ma
+UID:evt-8GiUkOf9PAmQE4i@events.lu.ma
+SUMMARY:SEV0 - The reliability conference (SF)
+DESCRIPTION:Get up-to-date information at: https://luma.com/wuoe9ul2\n\nAd
+ dress:\nSFJAZZ\nSan Francisco, California\nUnited States\n\nSEV0 is incide
+ nt.io's annual conference for technical leaders in incident management and
+  reliability. This is a one-day event bringing together SREs, engineering 
+ leaders, and CTOs from some of the world's best companies. Think world-cla
+ ss speakers, real talks about reliability, and a room full of people who a
+ ctually get it.\nincident.io customer? You're on us. Reach out to your Acc
+ ount Manager for your complimentary registration link.\n\nHosted by incide
+ nt.io
+LOCATION:SFJAZZ, 201 Franklin St, San Francisco, CA 94102, USA
+GEO:37.7764351;-122.421631
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261028T000000Z
+DTEND:20261028T020000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Syntax FM":MAILTO:calendar-invite@lu.ma
+UID:evt-4jMuF9jG4OQJDsO@events.lu.ma
+SUMMARY:San Francisco Syntax Meetup
+DESCRIPTION:Get up-to-date information at: https://luma.com/5ng6bniy\n\nAd
+ dress:\nBarebottle Beer Garden at Salesforce Park\nSan Francisco, Californ
+ ia\nUnited States\n\nWe're in town for GitHub Universe! Come hang out with
+  the whole Syntax crew at Barebottle Beer Garden at Salesforce Park\nThe l
+ ast two years' events were so great that we're running it back AGAIN!! Joi
+ n us for a SF Syntax Meetup, a laid-back event for all web developers and 
+ coding lovers! This in-person event will take place at Barebottle Beer Gar
+ den at Salesforce Park in San Francisco the day before GitHub Universe.\nN
+ o agenda, come hang out, talk to Scott, Wes, CJ, the rest of the Syntax cr
+ ew and some folks from Sentry, and have a good time!\n\nHosted by Syntax F
+ M
+LOCATION:Barebottle Beer Garden at Salesforce Park, Salesforce Park 4th Le
+ vel, 425 Mission St, San Francisco, CA 94105, USA
+GEO:37.7894092;-122.3964204
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261028T020000Z
+DTEND:20261028T040000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Ashley Jepson":MAILTO:calendar-invite@lu.ma
+UID:evt-W00JDgYIpafTfuv@events.lu.ma
+SUMMARY:Women in AI | Factory x Sapienne x Sequoia
+DESCRIPTION:Get up-to-date information at: https://luma.com/factoryai-sdkw
+ \n\nAddress:\nCheck event page for more details.\n\nJoin Factory, Sapienne
+ , & Sequoia for the first Factory Women in AI Night. It's an evening for w
+ omen who build with AI and for anyone ready to start. We'll have food, dri
+ nks, a hands-on workshop, a fireside chat, and plenty of time to meet the 
+ people around you.\nAI is changing how software gets built and who gets to
+  build it. This summit kicks off a series that helps women gain the techni
+ cal skills that matter now, puts a spotlight on what technical women are s
+ hipping, and gives back to the community that makes this work possible.\nW
+ hat to expect\nHands-on Factory workshop. Learn how to…\n\nHosted by Ash
+ ley Jepson & 5 others
+LOCATION:https://luma.com/event/evt-W00JDgYIpafTfuv
+GEO:37.77896631143484;-122.3927408544059
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261029T010000Z
+DTEND:20261029T030000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Veena Patel":MAILTO:calendar-invite@lu.ma
+UID:evt-ZQNUVD376AYZW9G@events.lu.ma
+SUMMARY:Love Potion Crafts Night
+DESCRIPTION:Get up-to-date information at: https://luma.com/71c8ntml\n\nAd
+ dress:\nThe Love Potion Library - Books, Tea, Wine\nSan Francisco, CA\nUni
+ ted States\n\nWhat's better than discussions about wonderful books while y
+ ou craft?\n\nWelcome to Love Potion Crafters, where rival hobbies become l
+ overs. This is a monthly meetup where we combine our love for romance read
+ ing and crafts.\n\nHere's the deal: on the last Wednesday of the month, we
+  gather at the Love Potion Library to craft, connect, and dig into our boo
+ k of the month. Think of it as a book club, but one where your hands are a
+ lways busy, and the conversation flows just as freely as the tea.\n\nThe b
+ ook for the October meetup will be Vampires of El Norte By Isabel Cañas!
+ \nTo purchase audiobooks from…\n\nHosted by Veena Patel
+LOCATION:The Love Potion Library - Books, Tea, Wine, 284 Noe St, San Franc
+ isco, CA 94114, USA
+GEO:37.7645596;-122.4334143
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261029T020000Z
+DTEND:20261029T050000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Gray Area":MAILTO:calendar-invite@lu.ma
+UID:evt-n7P6gWkL7ODaOT4@events.lu.ma
+SUMMARY:Scaling Intelligence —Modal x Gray Area Commissions — OPENING 
+ NIGHT
+DESCRIPTION:Get up-to-date information at: https://luma.com/5j93bc4c\n\nAd
+ dress:\nGray Area / Grand Theater\nSan Francisco, CA\nUnited States\n\nBe 
+ among the first to experience Scaling Intelligence, a new exhibition bring
+ ing together 11 commissioned projects exploring the possibilities of compu
+ ting at scale with artificial intelligence.\nAs aesthetic practices evolve
+ , how can artists help us interpret new realities unlocked through scaling
+  intelligence?\nEach selected artist, culture maker, or collective receive
+ s materials support and Modal cloud computing credits to develop a new wor
+ k. Over the coming weeks, the commissioned creators will work with enginee
+ rs, developers, producers, curators, and exhibition designers to bring the
+ ir…\n\nHosted by Gray Area, Peri Langlois & Modal Events
+LOCATION:Gray Area / Grand Theater, 2665 Mission St, San Francisco, CA 941
+ 10, USA
+GEO:37.7543922;-122.41850269999999
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261031T023000Z
+DTEND:20261031T083000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Sarah Tobin":MAILTO:calendar-invite@lu.ma
+UID:evt-aOMxWF8HN0Hth5C@events.lu.ma
+SUMMARY:ANNUAL MRC HALLOWEEN PARTY
+DESCRIPTION:Get up-to-date information at: https://luma.com/pdgi6lzs\n\nAd
+ dress:\nNovela\nSan Francisco, CA\nUnited States\n\nMRC ANNUAL HALLOWEEN P
+ ARTY\nThis is one of our biggest MRC annual events - get your ticket asap 
+ 👻\nTickets include a craft cocktail 🥂\nDJ line-up at a great venue. 
+ The best company. You never know who you'll meet  👻\nDrinks, dj lineup,
+  costume competition, and giveaways 👻\nDJ Lineup:\nFOXI SUN\nMore comin
+ g soon\nCostume awards:\nBest running costume\nBest group costume\nBest ov
+ erall costume\nPrizes donated by our partners 🎁\n\nHosted by Sarah Tobi
+ n, Marina Run Club & Angie Nibbi
+LOCATION:Novela, 662 Mission St, San Francisco, CA 94105, USA
+GEO:37.787096999999996;-122.40136
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261101T183000Z
+DTEND:20261101T200000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Local Economy":MAILTO:calendar-invite@lu.ma
+UID:evt-rB2ZLoa2dwzA4Jo@events.lu.ma
+SUMMARY:Hands-on Matcha Workshop by ochamode
+DESCRIPTION:Get up-to-date information at: https://luma.com/i6dxuh1k\n\nAd
+ dress:\nLocal Economy\nOakland, CA\nUnited States\n\nExperience an authent
+ ic Japanese tea ceremony in a welcoming, hands-on workshop led by a Japane
+ se tea ceremony instructor.\nHarue Imaizumi practices and teaches the Omot
+ esenke way of tea in Berkeley. She has studied tea in both Japan and the U
+ nited States and is a certified instructor of the Omotesenke school. Throu
+ gh her practice and teaching, she is dedicated to sharing wa no kokoro—t
+ he spirit of harmony.\nDuring the workshop, guests will learn about Japane
+ se tea culture, matcha culture, and the wellness benefits of matcha, while
+  being introduced to a table-style Japanese tea ceremony.\nYou’ll…\n\n
+ Hosted by Local Economy & Mayuka Inaba
+LOCATION:Local Economy, 6028 College Ave, Oakland, CA 94618, USA
+GEO:37.84859610000001;-122.25206100000001
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261104T020000Z
+DTEND:20261104T033000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Local Economy":MAILTO:calendar-invite@lu.ma
+UID:evt-gYeCZoNCvPySDVg@events.lu.ma
+SUMMARY:Tommy Orange and Shane Hawk talk indigenous horror stories
+DESCRIPTION:Get up-to-date information at: https://luma.com/rnn8lyc2\n\nAd
+ dress:\nLocal Economy\nOakland, CA\nUnited States\n\nThe team that brought
+  you the bestselling Indigenous fiction anthology Never Whistle at Night h
+ as returned with a new collection of unsettling and sinister stories: Back
+  for Blood: Never Whistle at Night Part II. This latest volume features tw
+ enty-one brand-new, groundbreaking, gruesome tales—authored by both esta
+ blished (Tommy Orange! Stephen Graham Jones!) and newly unearthed Indigeno
+ us talent. This isn’t just “dark fiction,” it’s full-tilt horror.
+ \nCo-editors Shane Hawk and Ted Van Alst Jr. say, “Not an occasional shi
+ ver, not a decorative brush with the uncanny, but sustained dread,…\n\nH
+ osted by Local Economy
+LOCATION:Local Economy, 6028 College Ave, Oakland, CA 94618, USA
+GEO:37.84859610000001;-122.25206100000001
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261106T020000Z
+DTEND:20261106T043000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Baseten":MAILTO:calendar-invite@lu.ma
+UID:evt-03gXuhi7iBCshRM@events.lu.ma
+SUMMARY:Braintrust CEO Ankur and Greylock Partner Corinne on how agents ar
+ e changing evals
+DESCRIPTION:Get up-to-date information at: https://luma.com/baseten-g3n4\n
+ \nAddress:\n560 Davis St suite 250\nSan Francisco, CA\nUnited States\n\nBa
+ seten is proud to present Heavyweights, a series of talks where AI founder
+ s learn from the greats.\nToday, agents generate huge amounts of data, run
+  their own queries, and take multi-step actions in production. So what doe
+ s that mean for evals and observability?\nAnkur Goyal, Co-founder and CEO 
+ of Braintrust, sits down with Corinne Riley, Partner at Greylock to discus
+ s topics like:\nWhy the focus is moving from standalone evals to agent obs
+ ervability.\nRebuilding your database for agents.\nHow to make model decis
+ ions based on data when there are more models than ever.\nThis is an eveni
+ ng for…\n\nHosted by Baseten
+LOCATION:560 Davis St suite 250, San Francisco, CA 94111, USA
+GEO:37.7977255;-122.3982202
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261106T023000Z
+DTEND:20261106T053000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Tyler Lux":MAILTO:calendar-invite@lu.ma
+UID:evt-83Y8PQtrjkEeRXp@events.lu.ma
+SUMMARY:139th SF Hardware Meetup @ Vizcom | Manufacturing and Design
+DESCRIPTION:Get up-to-date information at: https://luma.com/2u9iuenk\n\nAd
+ dress:\nCheck event page for more details.\n\nJoin us for the 139th SF Har
+ dware Meetup at Vizcom. Our theme for the night: Manufacturing and Design!
+ \nWe'll have food and drink and there will be a chance for an open mic.\n
+ 🤖 Bring demos for the community open mic.\nSpeakers\nTBA\nAgenda\n6:30-
+ 7:00 - Arrival, mingle, grab refreshments\n7:00-7:05 - Welcome and introdu
+ ction\n7:05-8:00 - Guest talks and audience Q+A\n8:00-8:30p - Community op
+ en mic    Anyone will have the chance for a 2min pitch to demo a prototype
+  or talk about what they are working on.\n8:30-9:30p - Mix + mingle\nThank
+  you to our venue partner!\nVizcom is the AI-powered design platform…\n
+ \nHosted by Tyler Lux & 5 others
+LOCATION:https://luma.com/event/evt-83Y8PQtrjkEeRXp
+GEO:37.77946085100003;-122.39601648187379
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261107T020000Z
+DTEND:20261107T050000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Tolani V":MAILTO:calendar-invite@lu.ma
+UID:evt-7xPHTCks5ZWaa0E@events.lu.ma
+SUMMARY:“OUTSIDE - The Escape” Opening Reception
+DESCRIPTION:Get up-to-date information at: https://luma.com/kq0pyd51\n\nAd
+ dress:\nCheck event page for more details.\n\nArtwork by De’Vonne Foxwor
+ th. Curated by Tolani Verissimo. Presented by Joyce Gordon Foundation.\n
+ “OUTSIDE” is the first exhibit presentation by Bay Area artist De’Vo
+ nne Foxworth, and it’s only fitting to experience it at the pulse of fin
+ e art in downtown Oakland - Joyce Gordon Gallery.\nAt its heart, “OUTSID
+ E” explores escapism and the liberating freedom found in choosing where 
+ our minds, bodies, and spirits play. For Black youth, the choice to escape
+  into wonder, creativity, and adventure is an intentional claim to absolut
+ e personhood. When we lean into cathartic release, we assert that our…\n
+ \nHosted by Tolani V & Devonne Foxworth
+LOCATION:https://luma.com/event/evt-7xPHTCks5ZWaa0E
+GEO:37.80538620113467;-122.27094539336105
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261107T020000Z
+DTEND:20261107T050000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Casey O'Brien":MAILTO:calendar-invite@lu.ma
+UID:evt-tkyaOUQSVvrjGQ3@events.lu.ma
+SUMMARY:Visioning the Future: A Climate Action Collage Soirée
+DESCRIPTION:Get up-to-date information at: https://luma.com/u9l1w54q\n\nAd
+ dress:\nThe Faight Collective\nSan Francisco, CA\nUnited States\n\nVisioni
+ ng the Future: A Climate Action Collage Party to make friends, eat dinner,
+  and reimagine San Francisco\nIt’s 2050, and San Francisco is thriving. 
+ Our energy is abundant, reliable, and clean. Our green spaces are protecte
+ d. We’ve built affordable housing and increased our transit density to a
+ ccommodate our growing city. Writers, activists, and working class San Fra
+ nciscans are filling thousands of new homes with music and joy. Bicycles, 
+ pedestrians and electric buses and trains fill our streets. Every San Fran
+ ciscan is fed, housed and safe.\nLife in the SF of the future can be…\n
+ \nHosted by Casey O'Brien
+LOCATION:The Faight Collective, 473A Haight St, San Francisco, CA 94117, U
+ SA
+GEO:37.7719923;-122.42996919999999
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+BEGIN:VEVENT
+DTSTART:20261110T160000Z
+DTEND:20261111T010000Z
+DTSTAMP:20261019T142638Z
+ORGANIZER;CN="Gabriel Manor":MAILTO:calendar-invite@lu.ma
+UID:evt-1J0QIZuj4r8yblx@events.lu.ma
+SUMMARY:After Tokens
+DESCRIPTION:Get up-to-date information at: https://luma.com/after-tokens\n
+ \nAddress:\nTERRA\nSan Francisco, CA\nUnited States\n\nAfter Tokens\nThe A
+ I Economy Infrastructure Conference\n\nWhat happens after the model call?
+ \nTokens tell you what the model consumed. They don't tell you what a cust
+ omer can use, when an agent should stop, or how a contract becomes a limit
+  in your code.\nAfter Tokens is about the infrastructure that answers thos
+ e questions: metering, credits, entitlements, pricing, billing, and the sy
+ stems that keep them in sync.\nIf you've had to meter an agent run, figure
+  out what breaks when you move from tokens to credits, or check entitlemen
+ ts without slowing down the request, this day is for you.\nOne day, in…
+ \n\nHosted by Gabriel Manor & Dor Sasson
+LOCATION:TERRA, 511 Harrison St, San Francisco, CA 94105, USA
+GEO:37.785673599999996;-122.3932373
+SEQUENCE:214583198
+STATUS:TENTATIVE
+END:VEVENT
+END:VCALENDAR
