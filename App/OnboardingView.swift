@@ -19,6 +19,7 @@ struct OnboardingView: View {
     /// Apple gave a relay address; tickets sent there may never arrive.
     @State private var relayEmail = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var heroIconSize: CGFloat = 56
     @FocusState private var focus: DetailField?
 
     enum Page: Int, CaseIterable { case welcome, details, location, luma }
@@ -26,7 +27,7 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemGroupedBackground).ignoresSafeArea()
+            Color.canvas.ignoresSafeArea()
             Group {
                 switch page {
                 case .welcome: welcome
@@ -37,11 +38,9 @@ struct OnboardingView: View {
             }
             .transition(slide)
         }
-        .sheet(isPresented: $showConnect) {
-            ConnectLumaView {
-                state.refresh()
-                finish()
-            }
+        // Finish once the sheet has gone, not while it's still closing.
+        .sheet(isPresented: $showConnect, onDismiss: { if state.connected { finish() } }) {
+            ConnectLumaView { state.refresh() }
         }
         .onAppear(perform: loadSaved)
     }
@@ -83,16 +82,9 @@ struct OnboardingView: View {
                 .font(.title3)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-                .padding(.bottom, 32)
+                .padding(.bottom, 28)
 
-            VStack(alignment: .leading, spacing: 20) {
-                Feature(symbol: "sparkle.magnifyingglass", title: "Find anything",
-                        detail: "\u{201C}A free AI meetup Thursday\u{201D} becomes a booked spot.")
-                Feature(symbol: "brain", title: "Asked once, remembered",
-                        detail: "New questions come once, by text or voice. After that they fill themselves.")
-                Feature(symbol: "icloud.and.arrow.down", title: "Follows you to a new phone",
-                        detail: "Sign in and your answers come with you. Site logins stay on this phone.")
-            }
+            WelcomeExample()
             Spacer(minLength: 24)
         }
         .padding(.horizontal, 28)
@@ -189,7 +181,7 @@ struct OnboardingView: View {
             Spacer(minLength: 24)
             stepLabel(.location)
             Image(systemName: "location.circle.fill")
-                .font(.system(size: 56))
+                .font(.system(size: heroIconSize))
                 .foregroundStyle(Color.accentColor)
                 .padding(.bottom, 20)
                 .accessibilityHidden(true)
@@ -275,66 +267,22 @@ private struct DetailRow: View {
                 }
             }
             .padding(.leading, 14).padding(.trailing, 6)
-            .background(Color(.secondarySystemGroupedBackground),
+            .background(Color.surface,
                         in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
         }
     }
 }
 
-/// The app's mark, drawn in code so it matches the accent in light and dark.
+/// The velvet rope mark (design/logo/velvet-rope-mark.svg), kept as vector art.
 struct AppMark: View {
     var size: CGFloat = 72
 
     var body: some View {
-        ZStack {
-            TicketShape()
-                .fill(.white)
-                .frame(width: size * 0.6, height: size * 0.4)
-            Image(systemName: "checkmark")
-                .font(.system(size: size * 0.2, weight: .heavy))
-                .foregroundStyle(Color.accentColor)
-        }
-        .rotationEffect(.degrees(-10))
-        .frame(width: size, height: size)
-            .background(Color.accentColor.gradient,
-                        in: RoundedRectangle(cornerRadius: size * 0.26, style: .continuous))
-            .shadow(color: Color.accentColor.opacity(0.35), radius: 14, y: 6)
+        Image("BrandMark")
+            .resizable()
+            .interpolation(.high)
+            .frame(width: size, height: size)
             .accessibilityHidden(true)
-    }
-}
-
-/// A ticket stub: rounded card with a half-circle bite out of each side.
-struct TicketShape: Shape {
-    func path(in rect: CGRect) -> Path {
-        let notch = rect.height * 0.16
-        var card = Path(roundedRect: rect, cornerRadius: rect.height * 0.14, style: .continuous)
-        var bites = Path()
-        bites.addEllipse(in: CGRect(x: rect.minX - notch, y: rect.midY - notch, width: notch * 2, height: notch * 2))
-        bites.addEllipse(in: CGRect(x: rect.maxX - notch, y: rect.midY - notch, width: notch * 2, height: notch * 2))
-        card = card.subtracting(bites)
-        return card
-    }
-}
-
-private struct Feature: View {
-    let symbol: String
-    let title: String
-    let detail: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 16) {
-            Image(systemName: symbol)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 30)
-                .accessibilityHidden(true)
-            VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(.headline)
-                Text(detail).font(.subheadline).foregroundStyle(.secondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .accessibilityElement(children: .combine)
     }
 }
 
@@ -354,5 +302,48 @@ private struct Step: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Step \(number): \(text)")
+    }
+}
+
+/// What Doorlist does, shown as one request and its result rather than a feature list.
+private struct WelcomeExample: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(spacing: 10) {
+                Image(systemName: "sparkle.magnifyingglass").foregroundStyle(.secondary)
+                Text("\u{201C}A free AI meetup Thursday\u{201D}")
+                    .foregroundStyle(.primary)
+                Spacer(minLength: 0)
+            }
+            .font(.callout)
+            .padding(14)
+            Divider().padding(.leading, 14)
+            HStack(spacing: 12) {
+                VStack(spacing: 0) {
+                    Text("THU").font(.caption2.weight(.bold)).foregroundStyle(Color.accentColor)
+                    Text("23").font(.title3.weight(.semibold))
+                }
+                .frame(width: 44, height: 44)
+                .background(Color.fill, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("AI Builders Night").font(.subheadline.weight(.semibold))
+                    Text("4 questions answered").font(.footnote).foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 8)
+                Text("You're in")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 10).padding(.vertical, 5)
+                    .background(Color.accentColor, in: Capsule())
+            }
+            .padding(14)
+        }
+        .background(Color.surface, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+                .strokeBorder(Color.primary.opacity(0.06), lineWidth: 1)
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Example: you ask for a free AI meetup Thursday, and Doorlist books AI Builders Night and answers its questions for you.")
     }
 }

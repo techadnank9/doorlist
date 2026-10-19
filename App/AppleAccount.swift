@@ -18,7 +18,7 @@ enum AppleAccount {
         switch result {
         case .failure(let error):
             if (error as? ASAuthorizationError)?.code != .canceled {
-                outcome.error = "Apple sign in didn't finish. You can carry on without it."
+                outcome.error = "Apple sign in didn't finish. Try again."
             }
         case .success(let auth):
             guard let credential = auth.credential as? ASAuthorizationAppleIDCredential,
@@ -32,7 +32,7 @@ enum AppleAccount {
                 // so nothing typed below overwrites them with blanks.
                 await ProfileSync.now()
                 if let given = credential.fullName {
-                    let full = PersonNameComponentsFormatter().string(from: given)
+                    let full = given.formatted(.name(style: .medium))
                     if !full.isEmpty {
                         outcome.name = full
                         AnswerStore.shared.seed("name", label: "Full name", value: full)

@@ -42,42 +42,52 @@ struct ConnectedSite: Identifiable {
 
 struct ConnectedSitesView: View {
     @State private var signingIn: ConnectedSite?
-    @State private var refresh = 0
+    /// Ids of the sites marked connected, re-read whenever that may have changed.
+    @State private var connected: Set<String> = []
 
     var body: some View {
         List {
             Section {
                 ForEach(ConnectedSite.all) { site in
-                    HStack {
-                        Text(site.name)
-                        Spacer()
-                        if site.isConnected {
-                            Label("Connected", systemImage: "checkmark.seal.fill")
-                                .labelStyle(.titleAndIcon).font(.subheadline).foregroundStyle(.green)
+                    let isConnected = connected.contains(site.id)
+                    Button {
+                        if !isConnected { signingIn = site }
+                    } label: {
+                        HStack {
+                            Text(site.name).foregroundStyle(.primary)
+                            Spacer()
+                            if isConnected {
+                                Label("Connected", systemImage: "checkmark.seal.fill")
+                                    .labelStyle(.titleAndIcon).font(.subheadline).foregroundStyle(.green)
+                            }
                         }
+                        .contentShape(Rectangle())
                     }
-                    .contentShape(Rectangle())
-                    .onTapGesture { if !site.isConnected { signingIn = site } }
                     .swipeActions {
-                        if site.isConnected {
+                        if isConnected {
                             Button("Disconnect", role: .destructive) {
-                                Task { await site.forget(); refresh += 1 }
+                                Task { await site.forget(); reloadConnected() }
                             }
                         }
                     }
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityHint(site.isConnected ? "Swipe to disconnect" : "Opens \(site.name)'s sign-in page")
+                    .accessibilityHint(isConnected ? "Swipe to disconnect" : "Opens \(site.name)'s sign-in page")
                 }
-                .id(refresh)
             } footer: {
                 Text("Sign in once on the site's own page and bookings there start signed in. Logins stay on this phone and never sync. Swipe a connected site to disconnect it.")
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(Color.canvas)
         .listStyle(.insetGrouped)
         .navigationTitle("Other event sites")
-        .sheet(item: $signingIn, onDismiss: { refresh += 1 }) { site in
+        .sheet(item: $signingIn, onDismiss: reloadConnected) { site in
             SiteSignInSheet(site: site)
         }
+        .onAppear(perform: reloadConnected)
+    }
+
+    private func reloadConnected() {
+        connected = Set(ConnectedSite.all.filter(\.isConnected).map(\.id))
     }
 }
 
@@ -128,7 +138,8 @@ private struct SiteWebView: UIViewRepresentable {
         view.allowsBackForwardNavigationGestures = true
         view.load(URLRequest(url: url))
         context.coordinator.observation = view.observe(\.estimatedProgress) { [progress = $progress] web, _ in
-            DispatchQueue.main.async { progress.wrappedValue = web.estimatedProgress }
+            let value = web.estimatedProgress
+            Task { @MainActor in progress.wrappedValue = value }
         }
         return view
     }

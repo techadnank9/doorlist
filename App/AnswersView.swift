@@ -15,7 +15,7 @@ struct AnswersView: View {
         let q = search.trimmingCharacters(in: .whitespaces)
         return state.answers.compactMap { key, answer in
             let title = Self.allTitles[key] ?? answer.label
-            let hit = ([title, answer.value] + answer.questions).contains { $0.localizedCaseInsensitiveContains(q) }
+            let hit = ([title, answer.value] + answer.questions).contains { $0.localizedStandardContains(q) }
             return hit ? (key: key, title: title, answer: answer) : nil
         }
         .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
@@ -75,10 +75,10 @@ struct AnswersView: View {
         "dietary": "Dietary needs", "tshirt": "T-shirt size",
     ]
 
-    private var groupedKeys: Set<String> { Set(Self.groups.flatMap { $0.items.map(\.key) }) }
+    private static let groupedKeys: Set<String> = Set(groups.flatMap { $0.items.map(\.key) })
 
     private var others: [(key: String, title: String, answer: SavedAnswer)] {
-        state.answers.filter { !groupedKeys.contains($0.key) }
+        state.answers.filter { !Self.groupedKeys.contains($0.key) }
             .map { (key: $0.key, title: Self.otherTitles[$0.key] ?? $0.value.label, answer: $0.value) }
             .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
     }
@@ -87,8 +87,9 @@ struct AnswersView: View {
         NavigationStack {
             List {
               if !search.trimmingCharacters(in: .whitespaces).isEmpty {
-                Section(searchResults.isEmpty ? "No matches" : "Matches") {
-                    ForEach(searchResults, id: \.key) { row in
+                let results = searchResults
+                Section(results.isEmpty ? "No matches" : "Matches") {
+                    ForEach(results, id: \.key) { row in
                         Button {
                             editing = EditTarget(key: row.key, title: row.title, label: row.answer.label,
                                                  value: row.answer.value, choices: row.answer.choices,
@@ -96,6 +97,7 @@ struct AnswersView: View {
                         } label: {
                             QARow(question: row.title, answer: row.answer.value, extra: row.answer.questions.count - 1)
                         }
+                        .tint(.primary)
                     }
                 }
               } else {
@@ -120,6 +122,7 @@ struct AnswersView: View {
                                 QARow(question: row.title, answer: row.answer.value,
                                       extra: row.answer.questions.count - 1)
                             }
+                            .tint(.primary)
                         }
                         .onDelete { offsets in
                             let keys = offsets.map { others[$0].key }
@@ -178,6 +181,8 @@ struct AnswersView: View {
                 }
               }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.canvas)
             .searchable(text: $search, prompt: "Search questions and answers")
             .listStyle(.insetGrouped)
             .navigationTitle("Answers")
@@ -213,7 +218,7 @@ struct AnswersView: View {
                 .font(.title2.weight(.bold))
                 .foregroundStyle(.white)
                 .frame(width: 58, height: 58)
-                .background(Color.accentColor.gradient, in: Circle())
+                .background(Color.accentColor, in: Circle())
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(state.profileName ?? "Your answers").font(.title3.weight(.semibold))
@@ -258,6 +263,8 @@ struct AnswersView: View {
             }
             .padding(.vertical, 2)
         }
+        // A List button tints its whole label; saved answers should read as plain text.
+        .tint(.primary)
         .swipeActions {
             if saved != nil {
                 Button("Forget", role: .destructive) {
@@ -335,6 +342,8 @@ private struct EditAnswerSheet: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.canvas)
             .navigationTitle(target.title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

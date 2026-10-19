@@ -4,125 +4,139 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Doorlist: say where you want to go</title>
-<meta name="description" content="Doorlist finds events on Luma, Partiful, Eventbrite and the rest of the web, then books them for you with answers you've given before.">
+<meta name="description" content="Doorlist finds events on Luma, Partiful, Eventbrite, Cerebral Valley and the rest of the web, then books them for you with answers you've given before.">
 <meta property="og:title" content="Doorlist">
 <meta property="og:description" content="Say where you want to go. Doorlist finds the event and gets you on the list.">
 <meta property="og:image" content="img/05-results.png">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='16' fill='%234a3aff'/><path d='M18 22h28a3 3 0 0 1 3 3v3a4 4 0 0 0 0 8v3a3 3 0 0 1-3 3H18a3 3 0 0 1-3-3v-3a4 4 0 0 0 0-8v-3a3 3 0 0 1 3-3z' fill='white'/><path d='M26 32l4 4 8-8' stroke='%234a3aff' stroke-width='3.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>">
+<meta name="theme-color" content="#faf6f0">
+<link rel="icon" type="image/svg+xml" href="img/mark.svg">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div class="wrap">
-  <header class="top">
+
+<header class="subnav">
+  <div class="wrap">
     <a class="brand" href="./">
-      <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="16" fill="var(--accent)"/><path d="M18 22h28a3 3 0 0 1 3 3v3a4 4 0 0 0 0 8v3a3 3 0 0 1-3 3H18a3 3 0 0 1-3-3v-3a4 4 0 0 0 0-8v-3a3 3 0 0 1 3-3z" fill="#fff"/><path d="M26 32l4 4 8-8" stroke="var(--accent)" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <img src="img/mark.svg" alt="" width="28" height="28">
       Doorlist
     </a>
-    <nav>
+    <nav aria-label="Main">
       <a class="hide-sm" href="#how">How it works</a>
       <a class="hide-sm" href="#privacy">Privacy</a>
-      <a href="support.html">Support</a>
+      <a class="hide-sm" href="support.html">Support</a>
+      <a class="pill small" href="https://github.com/techadnank9/doorlist">Get Doorlist</a>
     </nav>
-  </header>
-
-  <main>
-    <div class="hero">
-      <div>
-        <h1>Say where you want to go. Doorlist gets you in.</h1>
-        <p class="lead">Describe the night you want, or share any event link. Doorlist finds it, fills the sign up form with answers you've given before, and books your spot.</p>
-        <div class="cta">
-          <a class="button" href="https://github.com/techadnank9/doorlist">Get it on GitHub</a>
-          <a class="button secondary" href="#how">See how it works</a>
-        </div>
-        <p class="note">iPhone app, iOS 17 and later. App Store release coming.</p>
-      </div>
-      <div class="phone"><img src="img/05-results.png" alt="Doorlist's Find screen showing the best match for a rooftop party, free, on Wednesday night" width="600" height="1304"></div>
-    </div>
-  </main>
-</div>
-
-<section id="how">
-  <div class="wrap">
-    <h2>Three ways in, one tap to book</h2>
-    <p class="section-lead">Whatever the event lives on, Doorlist treats it the same: read the form, fill what it knows, ask only what's new.</p>
-    <div class="steps">
-      <div class="step"><b>Describe it</b><span>&ldquo;A free AI meetup Thursday.&rdquo; Doorlist searches the web near you and checks every result is real, upcoming and open.</span></div>
-      <div class="step"><b>Or share a link</b><span>From Safari, Messages or WhatsApp, tap Share and pick Doorlist. Luma, Partiful, Eventbrite and most event pages work.</span></div>
-      <div class="step"><b>You're on the list</b><span>Answers you've given before fill in by themselves. You get a notification when you're in.</span></div>
-    </div>
-    <div class="sites"><span>Luma</span><span>Partiful</span><span>Eventbrite</span><span>Meetup</span><span>Any event page</span></div>
   </div>
-</section>
+</header>
 
-<section>
-  <div class="wrap">
-    <div class="feature">
-      <div class="text">
-        <h3>Find, by just saying it</h3>
-        <p>Type or say what you're in the mood for. Doorlist looks across Luma, Partiful, Eventbrite and the open web, opens every page to check the date and price, and puts the best fit first.</p>
-        <ul>
-          <li>Searches where you are; only your town is used</li>
-          <li>Skips events that clash with your calendar, if you turn it on</li>
-          <li>Asks one quick question when your request is too vague</li>
+<main>
+  <section class="tile">
+    <div class="wrap">
+      <h1>Say where you want to go. Doorlist gets you in.</h1>
+      <p class="lead">Describe the night you want, or share any event link. Doorlist finds it, fills the form with answers you've given before, and books your spot.</p>
+      <div class="actions">
+        <a class="pill" href="https://github.com/techadnank9/doorlist">Get Doorlist</a>
+        <a class="pill ghost" href="#how">See how it works</a>
+      </div>
+      <p class="fine">For iPhone, iOS 17 and later. In TestFlight now; App Store soon.</p>
+      <div class="device"><img src="img/05-results.png" alt="Doorlist's Find screen with the best match for a rooftop party on Wednesday night, marked as booked" width="600" height="1304"></div>
+    </div>
+  </section>
+
+  <section class="tile parchment" id="how">
+    <div class="wrap">
+      <h2>Three ways in. One tap to book.</h2>
+      <p class="lead">Wherever an event lives, Doorlist treats it the same: read the form, fill what it knows, ask only what's new.</p>
+      <div class="cards">
+        <div class="card"><span class="num">1</span><b>Describe it</b><span>&ldquo;A free AI meetup Thursday.&rdquo; Doorlist searches near you and checks every result is real, upcoming and open.</span></div>
+        <div class="card"><span class="num">2</span><b>Or share a link</b><span>From Safari, Messages or WhatsApp, tap Share and pick Doorlist. Most event pages work.</span></div>
+        <div class="card"><span class="num">3</span><b>You're on the list</b><span>Answers you've given before fill in by themselves. A notification tells you when you're in.</span></div>
+      </div>
+      <div class="sites" aria-label="Sites Doorlist books on"><span>Luma</span><span>Partiful</span><span>Eventbrite</span><span>Cerebral Valley</span><span>Meetup</span><span>Any event page</span></div>
+    </div>
+  </section>
+
+  <section class="tile dark">
+    <div class="wrap split">
+      <div class="copy">
+        <h2>Find it by just saying it.</h2>
+        <p class="lead">Type or say what you're in the mood for. Doorlist looks across the web, opens every page to check the date and price, and puts the best fit first.</p>
+        <ul class="points">
+          <li>Searches where you are. Only your town is used.</li>
+          <li>Skips anything that clashes with your calendar, if you want.</li>
+          <li>Asks one quick question when a request is too vague.</li>
         </ul>
       </div>
-      <div class="phone"><img src="img/04-find.png" alt="The Find screen with a text field, microphone button and example requests" loading="lazy" width="600" height="1304"></div>
+      <div class="device"><img src="img/04-find.png" alt="The Find screen: one text field with a microphone, a Find and book button, and example requests" loading="lazy" width="600" height="1304"></div>
     </div>
+  </section>
 
-    <div class="feature flip">
-      <div class="text">
-        <h3>Asked once, remembered</h3>
-        <p>&ldquo;What's your role?&rdquo;, &ldquo;Job title&rdquo; and &ldquo;What do you do?&rdquo; are the same question. Doorlist knows that, so you answer it once. New questions come one at a time, by typing or by voice.</p>
-        <ul>
-          <li>Speak your answer; it's turned into text for you</li>
-          <li>Away from the app? A notification asks, and you can reply right there</li>
-          <li>Paid tickets always wait for you. Doorlist never pays for anything</li>
+  <section class="tile">
+    <div class="wrap split flip">
+      <div class="copy">
+        <h2>Asked once. Remembered.</h2>
+        <p class="lead">&ldquo;What's your role?&rdquo; and &ldquo;Job title&rdquo; are the same question. You answer it once, by typing or by voice.</p>
+        <ul class="points">
+          <li>Away from the app? A notification asks, and you reply right there.</li>
+          <li>Paid tickets always wait for you. Doorlist never pays for anything.</li>
         </ul>
       </div>
-      <div class="phone"><img src="img/06-web-booking.png" alt="Doorlist filling an RSVP form, asking only the new question" loading="lazy" width="600" height="1304"></div>
+      <div class="device"><img src="img/06-web-booking.png" alt="Doorlist filling an RSVP form with a saved name and phone number, asking only the new question" loading="lazy" width="600" height="1304"></div>
     </div>
+  </section>
 
-    <div class="feature">
-      <div class="text">
-        <h3>Your month at a glance</h3>
-        <p>Everything you're going to, on a calendar. Today is picked when you open it; tap any day to see what's on.</p>
-        <ul>
-          <li>Status for every event: in, requested, or waitlisted</li>
-          <li>Sign in with Apple and it all follows you to a new phone</li>
+  <section class="tile parchment">
+    <div class="wrap narrow">
+      <h2>Everything on near you, in one place.</h2>
+      <p class="lead">Explore gathers events from Luma, Partiful, Eventbrite, Meetup, Cerebral Valley, Devpost and more, then removes the duplicates. Pick a city and a topic, tap a card, and you're booking.</p>
+      <div class="sites"><span>Tech</span><span>Hackathons</span><span>Food &amp; Drink</span><span>Arts</span><span>Fitness</span><span>Wellness</span><span>Climate</span><span>Online</span></div>
+    </div>
+  </section>
+
+  <section class="tile dark">
+    <div class="wrap split">
+      <div class="copy">
+        <h2>Your month at a glance.</h2>
+        <p class="lead">Everything you're going to, on a calendar. Today is already picked; tap any day to see what's on.</p>
+        <ul class="points">
+          <li>In, requested or waitlisted, for every event.</li>
+          <li>Sign in with Apple and it all follows you to a new phone.</li>
         </ul>
       </div>
-      <div class="phone"><img src="img/03-events.png" alt="The Events tab with a month calendar and dots on booked days" loading="lazy" width="600" height="1304"></div>
+      <div class="device"><img src="img/03-events.png" alt="The Events tab: a month calendar with today selected and dots on booked days" loading="lazy" width="600" height="1304"></div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section id="privacy">
-  <div class="wrap">
-    <h2>What Doorlist keeps, and what it doesn't</h2>
-    <p class="section-lead">The short version. The <a href="privacy.html">privacy policy</a> has every detail.</p>
-    <div class="privacy-grid">
-      <div><b>Your site logins stay on your phone</b><span>You sign in to Luma, Partiful and Eventbrite on their own pages. Those logins never reach our servers.</span></div>
-      <div><b>Your answers follow your account</b><span>Signed in with Apple, your saved answers and bookings are stored with your account so a new phone gets them back.</span></div>
-      <div><b>Search sends your request and town</b><span>Never your exact location, and never your saved answers.</span></div>
-      <div><b>Delete it all, any time</b><span>Answers tab, Delete account. Everything on our side is erased.</span></div>
+  <section class="tile parchment" id="privacy">
+    <div class="wrap">
+      <h2>What Doorlist keeps, and what it doesn't.</h2>
+      <p class="lead">The short version. The <a href="privacy.html">privacy policy</a> has every detail.</p>
+      <div class="cards two">
+        <div class="card"><b>Your site logins stay on your phone</b><span>You sign in to Luma, Partiful and the rest on their own pages. Those logins never reach us.</span></div>
+        <div class="card"><b>Your answers follow your account</b><span>Your saved answers and bookings are kept with your Apple sign-in, so a new phone gets them back.</span></div>
+        <div class="card"><b>Search sends your request and town</b><span>Never your exact location, and never your saved answers.</span></div>
+        <div class="card"><b>Delete it all, any time</b><span>Answers, Your account, Delete account. Everything on our side is erased.</span></div>
+      </div>
     </div>
-  </div>
-</section>
+  </section>
 
-<section>
-  <div class="wrap" style="max-width: 760px">
-    <h2>Questions</h2>
-    <details><summary>Does Doorlist buy tickets?</summary><p>No. It books free events and free tiers by itself. For anything with a price it stops and shows you the page so you can decide.</p></details>
-    <details><summary>Do I need accounts on every site?</summary><p>For Luma you sign in once inside Doorlist. Partiful and Eventbrite ask you to sign in the first time you book on them, on their own pages, and remember you after that.</p></details>
-    <details><summary>Is Doorlist affiliated with Luma, Partiful or Eventbrite?</summary><p>No. Doorlist is independent and books using your own accounts, the same way you would by hand.</p></details>
-    <details><summary>What if an event asks something new?</summary><p>Doorlist asks you once, by text or voice, and remembers the answer for next time. If you're not in the app, you get a notification.</p></details>
-  </div>
-</section>
+  <section class="tile">
+    <div class="wrap narrow">
+      <h2>Questions.</h2>
+      <div class="faq">
+        <details><summary>Does Doorlist buy tickets?</summary><p>No. It books free events and free tiers by itself. For anything with a price it stops and shows you the page so you can decide.</p></details>
+        <details><summary>Do I need accounts on every site?</summary><p>For Luma you sign in once inside Doorlist. Partiful, Eventbrite, Cerebral Valley and others ask you to sign in the first time you book on them, on their own pages, and remember you after that.</p></details>
+        <details><summary>Is Doorlist part of Luma, Partiful or Eventbrite?</summary><p>No. Doorlist is independent and books with your own accounts, the same way you would by hand.</p></details>
+        <details><summary>What if an event asks something new?</summary><p>Doorlist asks you once, by text or voice, and remembers the answer. If you're not in the app, you get a notification.</p></details>
+      </div>
+    </div>
+  </section>
+</main>
 
 <footer>
   <div class="wrap">
-    <span>&copy; 2026 Doorlist</span>
-    <nav><a href="privacy.html">Privacy</a><a href="terms.html">Terms</a><a href="support.html">Support</a></nav>
+    <span>Copyright &copy; 2026 Doorlist. Not affiliated with Luma, Partiful, Eventbrite, Meetup or Cerebral Valley.</span>
+    <nav aria-label="Legal"><a href="privacy.html">Privacy Policy</a><a href="terms.html">Terms of Service</a><a href="support.html">Support</a></nav>
   </div>
 </footer>
 </body>

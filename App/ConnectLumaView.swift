@@ -74,7 +74,8 @@ struct LumaSignInWebView: UIViewRepresentable {
         view.load(URLRequest(url: URL(string: "https://luma.com/signin")!))
         context.coordinator.watch(view)
         context.coordinator.progressObservation = view.observe(\.estimatedProgress) { [progress = $progress] web, _ in
-            DispatchQueue.main.async { progress.wrappedValue = web.estimatedProgress }
+            let value = web.estimatedProgress
+            Task { @MainActor in progress.wrappedValue = value }
         }
         return view
     }
@@ -85,9 +86,10 @@ struct LumaSignInWebView: UIViewRepresentable {
         coordinator.stop()
     }
 
+    @MainActor
     final class Coordinator: NSObject, WKNavigationDelegate {
         let onSession: (LumaSession) -> Void
-        private var timer: Timer?
+        private var polling: Task<Void, Never>?
         private var done = false
         private weak var webView: WKWebView?
         var progressObservation: NSKeyValueObservation?
@@ -96,10 +98,20 @@ struct LumaSignInWebView: UIViewRepresentable {
 
         func watch(_ view: WKWebView) {
             webView = view
-            timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in self?.check() }
+            polling?.cancel()
+            polling = Task { [weak self] in
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .seconds(1))
+                    guard !Task.isCancelled else { return }
+                    self?.check()
+                }
+            }
         }
 
-        func stop() { timer?.invalidate() }
+        func stop() {
+            polling?.cancel()
+            polling = nil
+        }
 
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) { check() }
 
@@ -121,7 +133,7 @@ struct LumaSignInWebView: UIViewRepresentable {
     }
 
     /// Forgets the Luma login inside the app's web views.
-    static func clearLumaData() async {
+    @MainActor static func clearLumaData() async {
         let store = WKWebsiteDataStore.default()
         let records = await store.dataRecords(ofTypes: WKWebsiteDataStore.allWebsiteDataTypes())
         let luma = records.filter { $0.displayName.contains("luma") || $0.displayName.contains("lu.ma") }

@@ -30,10 +30,10 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         return true
     }
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async
         -> UNNotificationPresentationOptions { [.banner, .sound] }
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+    nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
         let info = response.notification.request.content.userInfo
         if let token = info[Notifier.questionKey] as? String {
             // Typed straight into the notification: hand it to the waiting booking.
@@ -127,7 +127,7 @@ struct RootView: View {
         }
         // Doorlist needs an account: first launch, a skipped sign in on an older build, signing out
         // and deleting the account all land here until Sign in with Apple succeeds.
-        .fullScreenCover(isPresented: Binding(get: { !onboarded || !state.signedIn }, set: { _ in })) {
+        .fullScreenCover(isPresented: .constant(!onboarded || !state.signedIn)) {
             OnboardingView(returning: onboarded) { onboarded = true; state.refresh() }
                 .environmentObject(state)
                 .interactiveDismissDisabled()
@@ -178,7 +178,11 @@ private struct BookingSheet: View {
     var body: some View {
         BookingFlowView(model: model, onConnect: {
             booking = nil
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { showConnect = true }
+            Task {
+                // Let the booking sheet finish closing before the next one opens.
+                try? await Task.sleep(for: .milliseconds(450))
+                showConnect = true
+            }
         }, onClose: { booking = nil })
     }
 }

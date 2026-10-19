@@ -52,6 +52,19 @@ Doorlist answers them once and remembers. Then it goes further: tell it what kin
 </tr>
 </table>
 
+### Look and feel
+
+The brand is a velvet rope: two brass posts and a red rope, the line you get past. Source art is in `design/logo/` (SVG, plus the 1024 px app icon).
+
+| Token | Light | Dark | Use |
+|---|---|---|---|
+| Accent (velvet red) | `#D7263D` | `#EC3B52` | Everything you can tap, selected states, status |
+| Canvas | `#FAF6F0` | `#12100E` | Screen background |
+| Surface | `#FFFFFF` | `#1E1B18` | Cards, fields, list rows |
+| Brass | `#C9A23F` | `#E9C46A` | The logo only; too low contrast for text |
+
+The colours live in `Shared/Colors.xcassets` and are read through `Shared/Theme.swift`. White on the light accent is 4.96:1; the dark accent on the dark canvas is 4.8:1. Each screen keeps one input at the top. The send arrow appears only once the input holds something it can act on, so there are no greyed-out buttons.
+
 ### Functional views
 
 | Screen | What you do there | What happens underneath |

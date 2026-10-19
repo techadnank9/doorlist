@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 // MARK: - Data
 
@@ -23,10 +24,11 @@ struct ExploreEvent: Decodable, Identifiable, Equatable {
     var start: Date? { ExploreEvent.date(startsAt) }
     var end: Date? { endsAt.flatMap(ExploreEvent.date) }
 
+    private static let fractional = Date.ISO8601FormatStyle(includingFractionalSeconds: true)
+    private static let plain = Date.ISO8601FormatStyle()
+
     private static func date(_ raw: String) -> Date? {
-        let withFraction = ISO8601DateFormatter()
-        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return withFraction.date(from: raw) ?? ISO8601DateFormatter().date(from: raw)
+        (try? fractional.parse(raw)) ?? (try? plain.parse(raw))
     }
 }
 
@@ -90,7 +92,12 @@ final class ExploreModel: ObservableObject {
         task = Task { await load(reset: true) }
     }
 
-    func refresh() async { await load(reset: true) }
+    func refresh() async {
+        task?.cancel()
+        let refreshing = Task { await load(reset: true) }
+        task = refreshing
+        await refreshing.value
+    }
 
     /// The next page, when the last card on screen appears.
     func more(after event: ExploreEvent) {
@@ -100,7 +107,8 @@ final class ExploreModel: ObservableObject {
 
     private func load(reset: Bool) async {
         loading = true
-        defer { loading = false }
+        // A cancelled load was replaced by a newer one, which owns the spinner now.
+        defer { if !Task.isCancelled { loading = false } }
         var items: [URLQueryItem] = []
         if place == Self.nearMe, let here = await LocationProvider.shared.current(), here.latitude != 0 {
             items += [URLQueryItem(name: "lat", value: String(here.latitude)), URLQueryItem(name: "lng", value: String(here.longitude))]
@@ -124,7 +132,9 @@ final class ExploreModel: ObservableObject {
 
     private func get<T: Decodable>(_ path: String, _ items: [URLQueryItem] = []) async throws -> T {
         var req = DoorlistAPI.request(path, method: "GET", timeout: 20)
-        var components = URLComponents(url: req.url!, resolvingAgainstBaseURL: false)!
+        guard let url = req.url, var components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            throw URLError(.badURL)
+        }
         if !items.isEmpty { components.queryItems = items }
         req.url = components.url
         let (data, response) = try await URLSession.shared.data(for: req)
@@ -144,6 +154,7 @@ final class ExploreModel: ObservableObject {
 struct ExploreView: View {
     @Binding var booking: BookingRequest?
     @StateObject private var model = ExploreModel()
+    @ObservedObject private var location = LocationProvider.shared
     @State private var choosingPlace = false
 
     var body: some View {
@@ -157,7 +168,7 @@ struct ExploreView: View {
                     }
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.canvas)
             .refreshable { await model.refresh() }
             .navigationTitle("Explore")
             .toolbar {
@@ -174,16 +185,20 @@ struct ExploreView: View {
                 PlacePicker(places: model.places, selected: model.place) { model.place = $0 }
             }
             .task { await model.start() }
+            .onChange(of: location.status) { _, _ in
+                // Near me falls back to San Francisco until location is allowed.
+                if model.place == ExploreModel.nearMe { model.reload() }
+            }
         }
     }
 
     private var filters: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ChipRow(choices: model.topics, all: "All", selected: $model.topic)
-            ChipRow(choices: model.sources, all: "All sources", selected: $model.source, small: true)
+        // One row: the source menu leads, topics follow. Two stacked rows were twice the choices to scan.
+        ChipRow(choices: model.topics, all: "All", selected: $model.topic) {
+            SourceMenu(sources: model.sources, selected: $model.source)
         }
-        .padding(.vertical, 10)
-        .background(Color(.systemGroupedBackground))
+        .padding(.vertical, 6)
+        .background(Color.canvas)
     }
 
     @ViewBuilder private var content: some View {
@@ -217,15 +232,16 @@ struct ExploreView: View {
 // MARK: - Pieces
 
 /// A sideways row of filter chips. Tapping the selected chip again clears it.
-private struct ChipRow: View {
+private struct ChipRow<Leading: View>: View {
     let choices: [ExploreChoice]
     let all: String
     @Binding var selected: String?
-    var small = false
+    @ViewBuilder var leading: Leading
 
     var body: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        ScrollView(.horizontal) {
             HStack(spacing: 8) {
+                leading
                 chip(all, on: selected == nil) { selected = nil }
                 ForEach(choices) { choice in
                     chip(choice.name, on: selected == choice.id) { selected = selected == choice.id ? nil : choice.id }
@@ -233,19 +249,52 @@ private struct ChipRow: View {
             }
             .padding(.horizontal, Theme.gutter)
         }
+        .scrollIndicators(.hidden)
     }
 
     private func chip(_ title: String, on: Bool, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Text(title)
-                .font(small ? .caption.weight(.semibold) : .subheadline.weight(.semibold))
-                .padding(.horizontal, small ? 10 : 14)
-                .frame(minHeight: small ? 30 : 36)
+                .font(.subheadline.weight(.semibold))
+                .padding(.horizontal, 14)
+                .frame(minHeight: 36)
                 .foregroundStyle(on ? Color.white : Color.primary)
-                .background(on ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color(.secondarySystemGroupedBackground)), in: Capsule())
+                .background(on ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.surface), in: Capsule())
+                .frame(minHeight: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.pressable)
         .accessibilityAddTraits(on ? .isSelected : [])
+    }
+}
+
+/// Which site events come from, as one chip that opens a menu.
+private struct SourceMenu: View {
+    let sources: [ExploreChoice]
+    @Binding var selected: String?
+
+    private var title: String { sources.first { $0.id == selected }?.name ?? "All sites" }
+
+    var body: some View {
+        Menu {
+            Picker("Site", selection: $selected) {
+                Text("All sites").tag(String?.none)
+                ForEach(sources) { Text($0.name).tag(Optional($0.id)) }
+            }
+        } label: {
+            HStack(spacing: 4) {
+                Text(title)
+                Image(systemName: "chevron.down").font(.caption2.weight(.bold))
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(selected == nil ? Color.primary : Color.accentColor)
+            .padding(.horizontal, 14)
+            .frame(minHeight: 36)
+            .overlay { Capsule().strokeBorder(selected == nil ? Color.primary.opacity(0.15) : Color.accentColor, lineWidth: 1) }
+            .frame(minHeight: 44)
+            .contentShape(Rectangle())
+        }
+        .accessibilityLabel("Site: \(title)")
     }
 }
 
@@ -281,8 +330,10 @@ private struct ExploreCard: View {
             if let image = phase.image {
                 image.resizable().scaledToFill()
             } else {
-                Color(.tertiarySystemFill)
-                    .overlay(Image(systemName: event.topics.contains("hackathons") ? "hammer.fill" : "ticket.fill").foregroundStyle(.tertiary))
+                Color.fill
+                    .overlay {
+                        Image(systemName: event.topics.contains("hackathons") ? "hammer.fill" : "ticket.fill").foregroundStyle(.tertiary)
+                    }
             }
         }
         .frame(width: 84, height: 84)
@@ -319,11 +370,11 @@ private struct ExploreCard: View {
 private struct PlaceholderCard: View {
     var body: some View {
         HStack(spacing: 14) {
-            RoundedRectangle(cornerRadius: 12).fill(Color(.tertiarySystemFill)).frame(width: 84, height: 84)
+            RoundedRectangle(cornerRadius: 12).fill(Color.fill).frame(width: 84, height: 84)
             VStack(alignment: .leading, spacing: 8) {
-                Capsule().fill(Color(.tertiarySystemFill)).frame(width: 90, height: 10)
-                Capsule().fill(Color(.tertiarySystemFill)).frame(width: 190, height: 14)
-                Capsule().fill(Color(.tertiarySystemFill)).frame(width: 120, height: 11)
+                Capsule().fill(Color.fill).frame(width: 90, height: 10)
+                Capsule().fill(Color.fill).frame(width: 190, height: 14)
+                Capsule().fill(Color.fill).frame(width: 120, height: 11)
             }
             Spacer()
         }
@@ -354,11 +405,13 @@ private struct PlacePicker: View {
                     }
                 }
                 Section(search.isEmpty ? "All cities" : "") {
-                    ForEach(places.filter { $0.featured != true && (search.isEmpty || $0.name.localizedCaseInsensitiveContains(search)) }) {
+                    ForEach(places.filter { $0.featured != true && (search.isEmpty || $0.name.localizedStandardContains(search)) }) {
                         row($0.id, $0.name)
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.canvas)
             .searchable(text: $search, prompt: "Search cities")
             .navigationTitle("Where")
             .navigationBarTitleDisplayMode(.inline)
@@ -380,5 +433,6 @@ private struct PlacePicker: View {
                 if id == selected { Image(systemName: "checkmark").foregroundStyle(Color.accentColor) }
             }
         }
+        .accessibilityAddTraits(id == selected ? .isSelected : [])
     }
 }

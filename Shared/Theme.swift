@@ -4,7 +4,7 @@ import SwiftUI
 /// sits the same way.
 enum Theme {
     static let gutter: CGFloat = 20
-    static let cardRadius: CGFloat = 20
+    static let cardRadius: CGFloat = 16
     static let controlRadius: CGFloat = 14
     static let buttonHeight: CGFloat = 54
 
@@ -12,6 +12,18 @@ enum Theme {
     static let spring = Animation.spring(response: 0.38, dampingFraction: 1)
     /// For the success moment only.
     static let pop = Animation.spring(response: 0.42, dampingFraction: 0.72)
+}
+
+// MARK: - Palette
+
+/// Velvet rope: velvet red for every action, a warm cream canvas, white (or warm
+/// charcoal) cards, and brass for the mark only. Defined in Colors.xcassets with
+/// light and dark values.
+extension Color {
+    static let canvas = Color("Canvas")
+    static let surface = Color("Surface")
+    static let fill = Color("Fill")
+    static let gold = Color("Gold")
 }
 
 // MARK: - Buttons
@@ -26,7 +38,7 @@ struct PrimaryButtonStyle: ButtonStyle {
             .frame(maxWidth: .infinity, minHeight: Theme.buttonHeight)
             .foregroundStyle(isEnabled ? Color.white : Color.secondary)
             .background(
-                isEnabled ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color(.tertiarySystemFill)),
+                isEnabled ? AnyShapeStyle(Color.accentColor) : AnyShapeStyle(Color.fill),
                 in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous)
             )
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
@@ -79,7 +91,7 @@ extension View {
     func card(padding: CGFloat = 16) -> some View {
         self.padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.secondarySystemGroupedBackground),
+            .background(Color.surface,
                         in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
     }
 

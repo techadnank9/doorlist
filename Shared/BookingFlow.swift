@@ -79,10 +79,13 @@ final class BookingFlowModel: ObservableObject {
     }
 
     func binding(for id: String) -> Binding<PlanField>? {
-        guard let index = plan?.fields.firstIndex(where: { $0.id == id }) else { return nil }
+        guard let initial = plan?.fields.first(where: { $0.id == id }) else { return nil }
         return Binding(
-            get: { self.plan!.fields[index] },
-            set: { self.plan!.fields[index] = $0 }
+            get: { self.plan?.fields.first(where: { $0.id == id }) ?? initial },
+            set: { value in
+                guard let index = self.plan?.fields.firstIndex(where: { $0.id == id }) else { return }
+                self.plan?.fields[index] = value
+            }
         )
     }
 
@@ -106,6 +109,7 @@ final class BookingFlowModel: ObservableObject {
     }
 
     func book() async {
+        if case .booking = phase { return }
         guard let plan, let original else { return }
         phase = .booking
         BookingPlanner.remember(plan, original: original)
@@ -175,6 +179,11 @@ final class BookingFlowModel: ObservableObject {
     }
 }
 
+extension EnvironmentValues {
+    /// False in the share extension, where links can't open.
+    @Entry var canOpenLinks = true
+}
+
 // MARK: - Flow
 
 /// The booking screens, used by the app's sheet and by the share extension.
@@ -225,10 +234,11 @@ struct BookingFlowView: View {
                                 onClose: onClose)
                 }
             }
-            .background(Color(.systemGroupedBackground))
+            .background(Color.canvas)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar { toolbar }
         }
+        .environment(\.canOpenLinks, !inExtension)
         .tint(.accentColor)
         .interactiveDismissDisabled(isBooking)
         .task { if case .loading = model.phase { await model.start() } }
@@ -236,11 +246,9 @@ struct BookingFlowView: View {
             if phase == .background, !inExtension { model.notifyWaitingQuestion() }
             if phase == .active { Notifier.clearQuestion() }
         }
-        .onReceive(model.$phase) { phase in
+        .onChange(of: isAsking) { _, asking in
             // Reached a question while the app wasn't in front (Find booking in the background).
-            if case .asking = phase, !inExtension, scenePhase != .active {
-                DispatchQueue.main.async { model.notifyWaitingQuestion() }
-            }
+            if asking, !inExtension, scenePhase != .active { model.notifyWaitingQuestion() }
         }
         .onReceive(NotificationCenter.default.publisher(for: AnswerInbox.name)) { note in
             if let (token, text) = AnswerInbox.read(note) { model.receive(token: token, text: text) }
@@ -279,7 +287,7 @@ private struct StepProgress: View {
         HStack(spacing: 4) {
             ForEach(0..<total, id: \.self) { i in
                 Capsule()
-                    .fill(i <= current ? Color.accentColor : Color(.tertiarySystemFill))
+                    .fill(i <= current ? Color.accentColor : Color.fill)
                     .frame(width: total > 6 ? 14 : 24, height: 5)
             }
         }
@@ -293,6 +301,8 @@ private struct QuestionFlow: View {
     @ObservedObject var model: BookingFlowModel
     let animation: Animation?
     @FocusState private var focused: Bool
+    @State private var focusTask: Task<Void, Never>?
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         if let id = model.currentID, let field = model.binding(for: id) {
@@ -301,7 +311,11 @@ private struct QuestionFlow: View {
                     if model.step == 0, let event = model.event {
                         EventHeader(event: event)
                         if model.rememberedCount > 0 {
-                            Label("\(model.rememberedCount) answers filled in from memory", systemImage: "sparkles")
+                            Label {
+                                Text(LocalizedStringKey("^[\(model.rememberedCount) answer](inflect: true) filled in from memory"))
+                            } icon: {
+                                Image(systemName: "sparkles")
+                            }
                                 .font(.footnote.weight(.medium))
                                 .foregroundStyle(Color.accentColor)
                                 .padding(.horizontal, 10).padding(.vertical, 6)
@@ -329,7 +343,7 @@ private struct QuestionFlow: View {
     }
 
     private var transition: AnyTransition {
-        guard animation != nil, !UIAccessibility.isReduceMotionEnabled else { return .opacity }
+        guard !reduceMotion else { return .opacity }
         return .asymmetric(
             insertion: .move(edge: model.forward ? .trailing : .leading).combined(with: .opacity),
             removal: .move(edge: model.forward ? .leading : .trailing).combined(with: .opacity)
@@ -350,8 +364,13 @@ private struct QuestionFlow: View {
     }
 
     private func focusIfText(_ field: PlanField) {
+        focusTask?.cancel()
         if case .text = field.kind {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) { focused = true }
+            focusTask = Task {
+                try? await Task.sleep(for: .milliseconds(350))
+                guard !Task.isCancelled else { return }
+                focused = true
+            }
         } else {
             focused = false
         }
@@ -363,6 +382,9 @@ private struct QuestionScreen: View {
     @Binding var field: PlanField
     var focused: FocusState<Bool>.Binding
     let onSubmit: () -> Void
+
+    @State private var pendingAdvance: Task<Void, Never>?
+    @Environment(\.canOpenLinks) private var canOpenLinks
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -414,13 +436,18 @@ private struct QuestionScreen: View {
                 }
             }
             .padding(.leading, 14).padding(.trailing, 6)
-            .background(Color(.secondarySystemGroupedBackground),
+            .background(Color.surface,
                         in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
         case .single(let options):
             OptionList(options: options, isSelected: { field.text == $0 }, multiple: false) { option in
                 field.text = option
                 // Picking the answer is the whole step, so move on by itself.
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.28) { onSubmit() }
+                pendingAdvance?.cancel()
+                pendingAdvance = Task {
+                    try? await Task.sleep(for: .milliseconds(280))
+                    guard !Task.isCancelled else { return }
+                    onSubmit()
+                }
             }
         case .multi(let options):
             OptionList(options: options, isSelected: { field.choices.contains($0) }, multiple: true) { option in
@@ -438,9 +465,16 @@ private struct QuestionScreen: View {
                     Image(systemName: "doc.text").foregroundStyle(Color.accentColor)
                 }
                 if let termsURL {
-                    Link(destination: termsURL) {
-                        Label("Read the terms", systemImage: "arrow.up.right")
-                            .font(.subheadline.weight(.semibold))
+                    if canOpenLinks {
+                        Link(destination: termsURL) {
+                            Label("Read the terms", systemImage: "arrow.up.right")
+                                .font(.subheadline.weight(.semibold))
+                        }
+                    } else {
+                        Text(termsURL.absoluteString)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .textSelection(.enabled)
                     }
                 }
             }
@@ -507,7 +541,7 @@ private struct OptionList: View {
                 }
             }
         }
-        .background(Color(.secondarySystemGroupedBackground),
+        .background(Color.surface,
                     in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
         .sensoryFeedback(.selection, trigger: options.filter(isSelected))
     }
@@ -542,11 +576,11 @@ struct LoadingView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 22) {
             HStack(spacing: 14) {
-                RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color(.tertiarySystemFill))
+                RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.fill)
                     .frame(width: 64, height: 64)
                 VStack(alignment: .leading, spacing: 8) {
-                    Capsule().fill(Color(.tertiarySystemFill)).frame(width: 190, height: 14)
-                    Capsule().fill(Color(.tertiarySystemFill)).frame(width: 120, height: 11)
+                    Capsule().fill(Color.fill).frame(width: 190, height: 14)
+                    Capsule().fill(Color.fill).frame(width: 120, height: 11)
                 }
             }
             .shimmer()
@@ -737,7 +771,7 @@ private struct TicketCard: View {
             .padding(16)
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color.surface)
         .clipShape(RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
         .shadow(color: .black.opacity(0.08), radius: 16, y: 6)
         .accessibilityElement(children: .combine)
@@ -747,11 +781,11 @@ private struct TicketCard: View {
 private struct Perforation: View {
     var body: some View {
         HStack(spacing: 0) {
-            Circle().fill(Color(.systemGroupedBackground)).frame(width: 18, height: 18).offset(x: -9)
+            Circle().fill(Color.canvas).frame(width: 18, height: 18).offset(x: -9)
             Line().stroke(style: StrokeStyle(lineWidth: 1.5, dash: [5, 5]))
                 .foregroundStyle(Color(.separator))
                 .frame(height: 1)
-            Circle().fill(Color(.systemGroupedBackground)).frame(width: 18, height: 18).offset(x: 9)
+            Circle().fill(Color.canvas).frame(width: 18, height: 18).offset(x: 9)
         }
         .frame(height: 18)
         .accessibilityHidden(true)
@@ -810,7 +844,7 @@ struct EventHeader: View {
             AsyncImage(url: event.coverUrl.flatMap(URL.init(string:))) { image in
                 image.resizable().scaledToFill()
             } placeholder: {
-                Color(.tertiarySystemFill)
+                Color.fill
             }
             .frame(width: 64, height: 64)
             .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))

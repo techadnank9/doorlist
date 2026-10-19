@@ -11,36 +11,42 @@ struct HomeView: View {
     @State private var opened: BookingRecord?
     @State private var filter = ""
     @State private var day = Calendar.current.startOfDay(for: Date())
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @ScaledMetric(relativeTo: .largeTitle) private var emptyIconSize: CGFloat = 40
 
     private var trimmedLink: String { link.trimmingCharacters(in: .whitespacesAndNewlines) }
     private var linkIsValid: Bool { EventLink.find(in: trimmedLink, allowAnySite: true) != nil }
     private var showInvalid: Bool { !trimmedLink.isEmpty && !linkIsValid }
 
     /// History narrowed by the search field: event name, place, site or an answer sent.
-    private var matching: [BookingRecord] {
-        let q = filter.trimmingCharacters(in: .whitespaces).lowercased()
+    private func matchingHistory() -> [BookingRecord] {
+        let q = filter.trimmingCharacters(in: .whitespaces)
         guard !q.isEmpty else { return state.history }
         return state.history.filter { r in
             ([r.eventName, r.place ?? "", r.site.name] + (r.answers ?? []).map(\.answer))
-                .contains { $0.lowercased().contains(q) }
+                .contains { $0.localizedStandardContains(q) }
         }
     }
 
-    private var upcoming: [BookingRecord] {
+    private static func upcoming(in records: [BookingRecord]) -> [BookingRecord] {
         let cutoff = Date().addingTimeInterval(-6 * 3600)
-        return matching.filter { ($0.startAt ?? .distantFuture) >= cutoff }
+        return records.filter { ($0.startAt ?? .distantFuture) >= cutoff }
             .sorted { ($0.startAt ?? .distantFuture) < ($1.startAt ?? .distantFuture) }
     }
 
-    private var past: [BookingRecord] {
+    private static func past(in records: [BookingRecord]) -> [BookingRecord] {
         let cutoff = Date().addingTimeInterval(-6 * 3600)
-        return matching.filter { ($0.startAt ?? .distantFuture) < cutoff }
+        return records.filter { ($0.startAt ?? .distantFuture) < cutoff }
     }
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
+                    // Worked out once per pass rather than on every read.
+                    let matching = matchingHistory()
+                    let upcoming = Self.upcoming(in: matching)
+                    let past = Self.past(in: matching)
                     bookCard
                     if state.clipboardHasLink && trimmedLink.isEmpty { clipboardCard }
                     if state.history.isEmpty {
@@ -70,7 +76,7 @@ struct HomeView: View {
                 .animation(Theme.spring, value: hideShareTip)
             }
             .scrollDismissesKeyboard(.immediately)
-            .background(Color(.systemGroupedBackground))
+            .background(Color.canvas)
             .navigationTitle("Doorlist")
             .searchable(text: $filter, placement: .navigationBarDrawer(displayMode: .automatic),
                         prompt: "Search your events")
@@ -94,8 +100,9 @@ struct HomeView: View {
         .card(padding: 18)
     }
 
+    /// One field: paste a link and the arrow books it. No card, so the calendar leads.
     private var bookCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
                 Image(systemName: "link")
                     .foregroundStyle(.secondary)
@@ -108,31 +115,44 @@ struct HomeView: View {
                     .focused($focused)
                     .submitLabel(.go)
                     .onSubmit(book)
-                if !link.isEmpty {
+                if !link.isEmpty && !linkIsValid {
                     Button { link = "" } label: {
                         Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
                     .accessibilityLabel("Clear link")
                 }
+                if linkIsValid {
+                    Button(action: book) {
+                        Image(systemName: "arrow.right")
+                            .font(.body.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.accentColor, in: Circle())
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .accessibilityLabel("Book it")
+                    .transition(.scale.combined(with: .opacity))
+                }
             }
-            .padding(.horizontal, 14)
-            .frame(minHeight: 50)
-            .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
+            .padding(.leading, 14)
+            .padding(.trailing, 4)
+            .frame(minHeight: 52)
+            .background(Color.surface, in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous)
+                    .strokeBorder(focused ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: 1)
+            }
 
             if showInvalid {
                 Label("That isn't an event link. Try one like luma.com/abc123 or partiful.com/e/abc123.", systemImage: "exclamationmark.circle")
                     .font(.footnote).foregroundStyle(.red)
                     .transition(.opacity)
             }
-
-            Button(action: book) {
-                Label("Book it", systemImage: "arrow.right")
-                    .labelStyle(TrailingIconLabelStyle())
-            }
-            .buttonStyle(.primary)
-            .disabled(!linkIsValid)
         }
-        .card()
+        .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: linkIsValid)
         .animation(.easeOut(duration: 0.15), value: showInvalid)
     }
 
@@ -161,7 +181,7 @@ struct HomeView: View {
             .tint(.accentColor)
         }
         .card(padding: 14)
-        .transition(.move(edge: .top).combined(with: .opacity))
+        .transition(reduceMotion ? .opacity : .move(edge: .top).combined(with: .opacity))
     }
 
     private var shareTip: some View {
@@ -181,7 +201,8 @@ struct HomeView: View {
             Spacer(minLength: 0)
             Button { hideShareTip = true } label: {
                 Image(systemName: "xmark").font(.footnote.weight(.bold)).foregroundStyle(.tertiary)
-                    .frame(width: 28, height: 28)
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
             .accessibilityLabel("Hide tip")
         }
@@ -192,7 +213,7 @@ struct HomeView: View {
     private var emptyState: some View {
         VStack(spacing: 10) {
             Image(systemName: "ticket")
-                .font(.system(size: 40, weight: .light))
+                .font(.system(size: emptyIconSize, weight: .light))
                 .foregroundStyle(.tertiary)
                 .accessibilityHidden(true)
             Text("No events yet").font(.headline)
@@ -232,7 +253,7 @@ struct HomeView: View {
                     if index < records.count - 1 { Divider().padding(.leading, 76) }
                 }
             }
-            .background(Color(.secondarySystemGroupedBackground),
+            .background(Color.surface,
                         in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
         }
     }
@@ -242,12 +263,6 @@ struct HomeView: View {
         focused = false
         booking = BookingRequest(input: trimmedLink)
         link = ""
-    }
-}
-
-private struct TrailingIconLabelStyle: LabelStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        HStack(spacing: 6) { configuration.title; configuration.icon }
     }
 }
 
@@ -314,7 +329,7 @@ private struct DateTile: View {
                 .foregroundStyle(.primary)
         }
         .frame(width: 48, height: 52)
-        .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Color.fill, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityHidden(true)
     }
 }
@@ -333,7 +348,7 @@ private struct EventDetailView: View {
                         AsyncImage(url: record.coverUrl.flatMap(URL.init(string:))) { image in
                             image.resizable().scaledToFill()
                         } placeholder: {
-                            Color(.tertiarySystemFill)
+                            Color.fill
                         }
                         .frame(height: 160)
                         .frame(maxWidth: .infinity)
@@ -379,6 +394,8 @@ private struct EventDetailView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.canvas)
             .navigationTitle("Event")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -46,7 +46,7 @@ enum Preferences {
 
 /// Tells the app a sync is due. Posted on the main queue; harmless in the extension.
 func notifyDataChanged() {
-    DispatchQueue.main.async { NotificationCenter.default.post(name: .doorlistDataChanged, object: nil) }
+    Task { @MainActor in NotificationCenter.default.post(name: .doorlistDataChanged, object: nil) }
 }
 
 // MARK: - Luma session
@@ -135,7 +135,7 @@ struct SavedAnswer: Codable, Hashable {
 }
 
 /// Every answer the person told us to remember, keyed by `QuestionMatcher` keys.
-final class AnswerStore {
+final class AnswerStore: @unchecked Sendable {
     static let shared = AnswerStore()
 
     private let url = AppGroup.folder.appendingPathComponent("answers.json")
@@ -153,10 +153,14 @@ final class AnswerStore {
         return read()
     }
 
-    /// Takes the account's merged copy after a sync.
+    /// Takes the account's merged copy after a sync, keeping anything changed here since it was sent.
     func replaceAll(_ answers: [String: SavedAnswer]) {
         lock.lock(); defer { lock.unlock() }
-        write(answers)
+        var merged = answers
+        for (key, local) in read() where local.updatedAt > (answers[key]?.updatedAt ?? .distantPast) {
+            merged[key] = local
+        }
+        write(merged)
     }
 
     func get(_ key: String) -> SavedAnswer? { all()[key] }
@@ -213,7 +217,11 @@ final class AnswerStore {
 
     private func read() -> [String: SavedAnswer] {
         guard let data = try? Data(contentsOf: url) else { return [:] }
-        return (try? JSONDecoder.iso.decode([String: SavedAnswer].self, from: data)) ?? [:]
+        guard let answers = try? JSONDecoder.iso.decode([String: SavedAnswer].self, from: data) else {
+            setAside(url)
+            return [:]
+        }
+        return answers
     }
 
     private func write(_ answers: [String: SavedAnswer]) {
@@ -264,7 +272,7 @@ enum BookingStatus: String, Codable {
     }
 }
 
-final class HistoryStore {
+final class HistoryStore: @unchecked Sendable {
     static let shared = HistoryStore()
 
     private let url = AppGroup.folder.appendingPathComponent("history.json")
@@ -283,10 +291,11 @@ final class HistoryStore {
         notifyDataChanged()
     }
 
-    /// Takes the account's merged copy after a sync.
+    /// Takes the account's merged copy after a sync, keeping bookings made here since it was sent.
     func replaceAll(_ records: [BookingRecord]) {
         lock.lock(); defer { lock.unlock() }
-        save(records)
+        let incoming = Set(records.map(\.id))
+        save(read().filter { !incoming.contains($0.id) } + records)
     }
 
     private func save(_ records: [BookingRecord]) {
@@ -296,8 +305,20 @@ final class HistoryStore {
 
     private func read() -> [BookingRecord] {
         guard let data = try? Data(contentsOf: url) else { return [] }
-        return (try? JSONDecoder.iso.decode([BookingRecord].self, from: data)) ?? []
+        guard let records = try? JSONDecoder.iso.decode([BookingRecord].self, from: data) else {
+            setAside(url)
+            return []
+        }
+        return records
     }
+}
+
+/// Moves a file that no longer decodes to `<name>.bad`, so the next write can't silently wipe it.
+private func setAside(_ url: URL) {
+    let fm = FileManager.default
+    let bad = url.appendingPathExtension("bad")
+    try? fm.removeItem(at: bad)
+    try? fm.moveItem(at: url, to: bad)
 }
 
 extension JSONEncoder {

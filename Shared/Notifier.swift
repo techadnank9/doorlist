@@ -30,7 +30,6 @@ enum Notifier {
         content.body = body
         content.sound = .default
         content.categoryIdentifier = answerCategory
-        content.interruptionLevel = .timeSensitive
         content.userInfo = [questionKey: token]
         // One pending question at a time: a newer one replaces the older.
         let request = UNNotificationRequest(identifier: "doorlist-question", content: content, trigger: nil)

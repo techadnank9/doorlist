@@ -31,6 +31,8 @@ final class LocationProvider: NSObject, ObservableObject, CLLocationManagerDeleg
 
     private let manager = CLLocationManager()
     private var waiting: [CheckedContinuation<CLLocation?, Never>] = []
+    /// Bumped on every resolve, so an old request's timeout can't end a newer one.
+    private var generation = 0
     private static let key = "savedPlace"
 
     override init() {
@@ -93,14 +95,17 @@ final class LocationProvider: NSObject, ObservableObject, CLLocationManagerDeleg
             waiting.append(continuation)
             if waiting.count == 1 { manager.requestLocation() }
             // Give up after 6 seconds rather than hold the search.
+            let request = generation
             Task { [weak self] in
                 try? await Task.sleep(for: .seconds(6))
-                self?.resolve(nil)
+                guard let self, self.generation == request else { return }
+                self.resolve(nil)
             }
         }
     }
 
     private func resolve(_ location: CLLocation?) {
+        generation += 1
         let all = waiting
         waiting = []
         all.forEach { $0.resume(returning: location) }

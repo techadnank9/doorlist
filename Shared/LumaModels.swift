@@ -38,11 +38,12 @@ struct LumaEvent: Decodable {
     var startDate: Date? { Self.date(startAt) }
     var endDate: Date? { Self.date(endAt) }
 
+    private static let fractional = Date.ISO8601FormatStyle(includingFractionalSeconds: true)
+    private static let plain = Date.ISO8601FormatStyle()
+
     private static func date(_ raw: String?) -> Date? {
         guard let raw else { return nil }
-        let f = ISO8601DateFormatter()
-        f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return f.date(from: raw) ?? ISO8601DateFormatter().date(from: raw)
+        return (try? fractional.parse(raw)) ?? (try? plain.parse(raw))
     }
 
     var place: String? { geoAddressInfo?.cityState ?? geoAddressInfo?.city }

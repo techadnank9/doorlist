@@ -21,18 +21,26 @@ final class VoiceInput: ObservableObject {
     private var recorder: AVAudioRecorder?
     private var meter: Timer?
     private var seconds: Double = 0
-    private let fileURL = FileManager.default.temporaryDirectory.appendingPathComponent("doorlist-answer.m4a")
+    /// The current recording's file, a fresh name each time so an old transcription can't read a new one.
+    private var fileURL: URL?
+    private var transcription: Task<Void, Never>?
+    /// Set while the permission prompt is up, so a second tap doesn't start twice.
+    private var starting = false
 
     /// Press once to start, again to stop; the text arrives in `onText`.
     func toggle(context: String?, onText: @escaping (String) -> Void) {
         switch state {
         case .recording: stop(context: context, onText: onText)
         case .transcribing: break
-        default: Task { await start() }
+        default:
+            guard !starting else { return }
+            Task { await start() }
         }
     }
 
     func cancel() {
+        transcription?.cancel()
+        transcription = nil
         meter?.invalidate()
         recorder?.stop()
         recorder = nil
@@ -41,6 +49,9 @@ final class VoiceInput: ObservableObject {
     }
 
     private func start() async {
+        guard !starting else { return }
+        starting = true
+        defer { starting = false }
         guard await AVAudioApplication.requestRecordPermission() else {
             state = .failed("Microphone access is off. Turn it on in Settings › Doorlist.")
             return
@@ -53,6 +64,9 @@ final class VoiceInput: ObservableObject {
                 AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 16_000,
                 AVNumberOfChannelsKey: 1, AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
             ]
+            let fileURL = FileManager.default.temporaryDirectory
+                .appendingPathComponent("doorlist-answer-\(UUID().uuidString).m4a")
+            self.fileURL = fileURL
             let recorder = try AVAudioRecorder(url: fileURL, settings: settings)
             recorder.isMeteringEnabled = true
             recorder.record(forDuration: 120)
@@ -81,9 +95,16 @@ final class VoiceInput: ObservableObject {
         state = .transcribing
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        Task {
+        guard let fileURL else { state = .idle; return }
+        let seconds = seconds
+        transcription?.cancel()
+        transcription = Task {
+            // Each recording has its own name, so removing it is safe even after a cancel.
+            defer { try? FileManager.default.removeItem(at: fileURL) }
             do {
-                let text = try await transcribe(context: context).trimmingCharacters(in: .whitespacesAndNewlines)
+                let text = try await transcribe(fileURL, seconds: seconds, context: context)
+                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !Task.isCancelled else { return }
                 if text.isEmpty {
                     state = .failed("Didn't catch that. Try again a little closer.")
                 } else {
@@ -91,13 +112,13 @@ final class VoiceInput: ObservableObject {
                     state = .idle
                 }
             } catch {
+                guard !Task.isCancelled else { return }
                 state = .failed(error.localizedDescription)
             }
-            try? FileManager.default.removeItem(at: fileURL)
         }
     }
 
-    private func transcribe(context: String?) async throws -> String {
+    private func transcribe(_ fileURL: URL, seconds: Double, context: String?) async throws -> String {
         // Words from the question help names and jargon come out right.
         let terms = (context ?? "").split(whereSeparator: { !$0.isLetter && !$0.isNumber })
             .map(String.init).filter { $0.count > 3 }
@@ -172,15 +193,22 @@ struct MicButton: View {
         .accessibilityLabel(recording ? "Stop recording" : "Answer by voice")
         .overlay(alignment: .topTrailing) {
             if case .failed(let message) = voice.state {
-                Text(message)
-                    .font(.caption)
-                    .padding(10)
-                    .frame(width: 230, alignment: .leading)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                    .offset(y: -58)
-                    .onTapGesture { voice.cancel() }
-                    .transition(.opacity)
-                    .task { try? await Task.sleep(for: .seconds(4)); voice.cancel() }
+                Button { voice.cancel() } label: {
+                    Text(message)
+                        .font(.caption)
+                        .padding(10)
+                        .frame(width: 230, alignment: .leading)
+                        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .offset(y: -58)
+                .transition(.opacity)
+                .task {
+                    AccessibilityNotification.Announcement(message).post()
+                    // Only clear if the bubble timed out; if it went away first, a new recording may be running.
+                    guard (try? await Task.sleep(for: .seconds(4))) != nil else { return }
+                    voice.cancel()
+                }
             }
         }
         .onDisappear { voice.cancel() }

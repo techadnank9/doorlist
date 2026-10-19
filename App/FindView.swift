@@ -19,12 +19,13 @@ final class FindModel: ObservableObject {
     @Published var showAll = false
     @Published private(set) var lastQuery = ""
     private var clarifications: [Clarification] = []
+    private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
 
     var isWorking: Bool { if case .working = phase { true } else { false } }
 
     func search(autoBook: Bool, book: @escaping (EventLink) -> Void) {
         let text = query.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !text.isEmpty else { return }
+        guard !text.isEmpty, !isWorking else { return }
         if text != lastQuery { clarifications = [] }
         lastQuery = text
         run(autoBook: autoBook, book: book)
@@ -62,9 +63,14 @@ final class FindModel: ObservableObject {
         let asked = clarifications
 
         // Keep going for a while if the person switches apps mid-search.
-        let background = UIApplication.shared.beginBackgroundTask(withName: "event-search")
+        endBackgroundTask(backgroundTask)
+        let background = UIApplication.shared.beginBackgroundTask(withName: "event-search") { [weak self] in
+            guard let self else { return }
+            self.endBackgroundTask(self.backgroundTask)
+        }
+        backgroundTask = background
         Task {
-            defer { UIApplication.shared.endBackgroundTask(background) }
+            defer { endBackgroundTask(background) }
             do {
                 let outcome = try await EventSearch.run(request, clarifications: asked) { [weak self] stage in
                     self?.phase = .working(stage)
@@ -87,6 +93,13 @@ final class FindModel: ObservableObject {
                 phase = .failed(error.localizedDescription)
             }
         }
+    }
+
+    /// Ends the search's background time once, whether it finished or the system ran out.
+    private func endBackgroundTask(_ id: UIBackgroundTaskIdentifier) {
+        guard id != .invalid, id == backgroundTask else { return }
+        UIApplication.shared.endBackgroundTask(id)
+        backgroundTask = .invalid
     }
 }
 
@@ -118,7 +131,7 @@ struct FindView: View {
                 .animation(reduceMotion ? .easeInOut(duration: 0.2) : Theme.spring, value: model.phase)
             }
             .scrollDismissesKeyboard(.immediately)
-            .background(Color(.systemGroupedBackground))
+            .background(Color.canvas)
             .navigationTitle("Find")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -173,30 +186,48 @@ struct FindView: View {
 
     // MARK: The ask
 
+    private var trimmedQuery: String { model.query.trimmingCharacters(in: .whitespaces) }
+
+    /// One field, like Messages: the mic while it's empty, a send arrow once there's text.
     private var askCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 10) {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .bottom, spacing: 8) {
                 TextField("What do you want to go to?", text: $model.query, axis: .vertical)
                     .font(.title3)
                     .lineLimit(1...4)
                     .focused($focused)
                     .submitLabel(.search)
                     .onSubmit(search)
-                    .padding(.vertical, 10)
-                MicButton(context: nil) { spoken in
-                    model.query = spoken
-                    search()
+                    .padding(.vertical, 14)
+                if trimmedQuery.isEmpty {
+                    MicButton(context: nil) { spoken in
+                        model.query = spoken
+                        search()
+                    }
+                    .padding(.bottom, 4)
+                } else {
+                    Button(action: search) {
+                        Image(systemName: "arrow.up")
+                            .font(.body.weight(.bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.accentColor, in: Circle())
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .disabled(model.isWorking)
+                    .accessibilityLabel(autoBook ? "Find and book" : "Find events")
+                    .padding(.bottom, 4)
+                    .transition(.scale.combined(with: .opacity))
                 }
             }
-            .padding(.leading, 14).padding(.trailing, 6).padding(.vertical, 2)
-            .background(Color(.tertiarySystemFill),
-                        in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
-
-            Button(action: search) {
-                Label(autoBook ? "Find and book" : "Find events", systemImage: "magnifyingglass")
+            .padding(.leading, 16).padding(.trailing, 6)
+            .background(Color.surface, in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+                    .strokeBorder(focused ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: 1)
             }
-            .buttonStyle(.primary)
-            .disabled(model.query.trimmingCharacters(in: .whitespaces).isEmpty || model.isWorking)
+            .animation(reduceMotion ? nil : .snappy(duration: 0.2), value: trimmedQuery.isEmpty)
 
             Button { showSettings = true } label: {
                 HStack(spacing: 6) {
@@ -208,13 +239,12 @@ struct FindView: View {
                 .lineLimit(1)
                 .font(.footnote)
                 .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: 32)
+                .padding(.horizontal, 4)
+                .frame(minHeight: 44)
             }
             .buttonStyle(.plain)
             .accessibilityHint("Opens search settings")
         }
-        .card()
     }
 
     private var examplesRow: some View {
@@ -228,8 +258,8 @@ struct FindView: View {
                     } label: {
                         Text(example)
                             .font(.subheadline)
-                            .padding(.horizontal, 14).frame(minHeight: 40)
-                            .background(Color(.secondarySystemGroupedBackground), in: Capsule())
+                            .padding(.horizontal, 14).frame(minHeight: 44)
+                            .background(Color.surface, in: Capsule())
                     }
                     .buttonStyle(.pressable)
                     .foregroundStyle(.primary)
@@ -249,7 +279,7 @@ struct FindView: View {
                     ForEach(options, id: \.self) { option in
                         Button(option) { answer(option) }
                             .font(.subheadline.weight(.medium))
-                            .padding(.horizontal, 14).frame(minHeight: 40)
+                            .padding(.horizontal, 14).frame(minHeight: 44)
                             .background(Color.accentColor.opacity(0.12), in: Capsule())
                             .foregroundStyle(Color.accentColor)
                             .buttonStyle(.pressable)
@@ -261,7 +291,7 @@ struct FindView: View {
                     .submitLabel(.send)
                     .onSubmit { answer(followUp) }
                     .padding(12)
-                    .background(Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
+                    .background(Color.fill, in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
                 MicButton(context: question) { answer($0) }
             }
         }
@@ -295,7 +325,7 @@ struct FindView: View {
                             if index < shown.count - 1 { Divider().padding(.leading, 16) }
                         }
                     }
-                    .background(Color(.secondarySystemGroupedBackground),
+                    .background(Color.surface,
                                 in: RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
                     if rest.count > 3 && !model.showAll {
                         Button("Show \(rest.count - 3) more") { model.showAll = true }
@@ -439,10 +469,12 @@ private struct TopPickCard: View {
             }
             .padding(16)
         }
-        .background(Color(.secondarySystemGroupedBackground))
+        .background(Color.surface)
         .clipShape(RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
-            .strokeBorder(Color.accentColor.opacity(booking ? 0.9 : 0), lineWidth: 2))
+        .overlay {
+            RoundedRectangle(cornerRadius: Theme.cardRadius, style: .continuous)
+                .strokeBorder(Color.accentColor.opacity(booking ? 0.9 : 0), lineWidth: 2)
+        }
     }
 }
 
@@ -547,6 +579,7 @@ struct FindSettingsView: View {
                             }
                         }
                         .foregroundStyle(.primary)
+                        .accessibilityAddTraits(location.place?.isManual != true ? .isSelected : [])
                     } else {
                         Button("Use my location") { location.requestPermission() }
                     }
@@ -582,6 +615,8 @@ struct FindSettingsView: View {
                          : "Reads your calendar on this phone to flag clashes. It's never sent anywhere.")
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.canvas)
             .tint(.accentColor)
             .navigationTitle("Search settings")
             .navigationBarTitleDisplayMode(.inline)
@@ -611,7 +646,7 @@ struct FlowLayout: Layout {
         let width = proposal.width ?? .infinity
         var x: CGFloat = 0, y: CGFloat = 0, row: CGFloat = 0, widest: CGFloat = 0
         for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
+            let size = fittedSize(view, width: width)
             if x > 0, x + size.width > width { x = 0; y += row + spacing; row = 0 }
             x += size.width + spacing
             row = max(row, size.height)
@@ -623,12 +658,19 @@ struct FlowLayout: Layout {
     func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var x = bounds.minX, y = bounds.minY, row: CGFloat = 0
         for view in subviews {
-            let size = view.sizeThatFits(.unspecified)
+            let size = fittedSize(view, width: bounds.width)
             if x > bounds.minX, x + size.width > bounds.maxX { x = bounds.minX; y += row + spacing; row = 0 }
             view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(size))
             x += size.width + spacing
             row = max(row, size.height)
         }
+    }
+
+    /// A child's natural size, or its size wrapped to the row when it's wider than that.
+    private func fittedSize(_ view: LayoutSubview, width: CGFloat) -> CGSize {
+        let size = view.sizeThatFits(.unspecified)
+        guard size.width > width, width.isFinite else { return size }
+        return view.sizeThatFits(ProposedViewSize(width: width, height: nil))
     }
 }
 

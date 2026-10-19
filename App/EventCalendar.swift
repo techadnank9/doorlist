@@ -10,11 +10,14 @@ struct EventCalendar: View {
 
     private let calendar = Calendar.current
 
-    /// Events per day, keyed by the start of that day.
-    private var byDay: [Date: [BookingRecord]] {
-        Dictionary(grouping: records.filter { $0.startAt != nil && $0.status != .declined }) {
-            calendar.startOfDay(for: $0.startAt!)
+    /// How many events each day has, keyed by the start of that day.
+    private func countsByDay() -> [Date: Int] {
+        var counts: [Date: Int] = [:]
+        for record in records where record.status != .declined {
+            guard let start = record.startAt else { continue }
+            counts[calendar.startOfDay(for: start), default: 0] += 1
         }
+        return counts
     }
 
     private var weekdaySymbols: [String] {
@@ -33,6 +36,7 @@ struct EventCalendar: View {
     }
 
     var body: some View {
+        let counts = countsByDay()
         VStack(spacing: 10) {
             header
             HStack(spacing: 0) {
@@ -46,7 +50,13 @@ struct EventCalendar: View {
             .accessibilityHidden(true)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 0), count: 7), spacing: 2) {
                 ForEach(Array(cells.enumerated()), id: \.offset) { _, day in
-                    if let day { dayCell(day) } else { Color.clear.frame(height: 46) }
+                    ZStack {
+                        if let day {
+                            dayCell(day, count: counts[calendar.startOfDay(for: day)] ?? 0)
+                        } else {
+                            Color.clear.frame(height: 46)
+                        }
+                    }
                 }
             }
             .id(month)
@@ -54,6 +64,8 @@ struct EventCalendar: View {
         }
         .card(padding: 14)
         .gesture(DragGesture(minimumDistance: 30).onEnded { value in
+            // Only a mostly sideways swipe changes month, so scrolling the page doesn't.
+            guard abs(value.translation.width) > abs(value.translation.height) * 1.5 else { return }
             if value.translation.width < -40 { step(1) } else if value.translation.width > 40 { step(-1) }
         })
         .onAppear { month = calendar.startOfMonth(for: selected) }
@@ -81,10 +93,9 @@ struct EventCalendar: View {
         .font(.body.weight(.semibold))
     }
 
-    private func dayCell(_ day: Date) -> some View {
+    private func dayCell(_ day: Date, count: Int) -> some View {
         let isSelected = calendar.isDate(day, inSameDayAs: selected)
         let isToday = calendar.isDateInToday(day)
-        let count = byDay[calendar.startOfDay(for: day)]?.count ?? 0
         let isPast = day < calendar.startOfDay(for: Date())
         return Button {
             selected = day

@@ -261,7 +261,9 @@ final class WebBookingModel: ObservableObject {
     @Published private(set) var filledCount = 0
 
     weak var webView: WKWebView?
-    private var timer: Timer?
+    private var loop: Task<Void, Never>?
+    /// A scan is in flight, so the loop and an answer don't run one on top of the other.
+    private var ticking = false
     /// Field id -> the value Doorlist put in, so nothing is filled twice.
     private var handled: [String: String] = [:]
     private var clicks: [String: Int] = [:]
@@ -279,13 +281,20 @@ final class WebBookingModel: ObservableObject {
     var platform: EventPlatform { link.platform }
 
     func start() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.2, repeats: true) { [weak self] _ in
-            Task { @MainActor in await self?.tick() }
+        loop?.cancel()
+        loop = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(1.2))
+                guard !Task.isCancelled else { return }
+                await self?.tick()
+            }
         }
     }
 
-    func stop() { timer?.invalidate() }
+    func stop() {
+        loop?.cancel()
+        loop = nil
+    }
 
     /// The person takes over: Doorlist stops tapping but keeps watching for success.
     func pause() { phase = .paused }
@@ -299,7 +308,9 @@ final class WebBookingModel: ObservableObject {
     // MARK: Loop
 
     private func tick() async {
-        guard !finished, let webView else { return }
+        guard !finished, !ticking, let webView else { return }
+        ticking = true
+        defer { ticking = false }
         _ = try? await webView.evaluateJavaScript(pageScript)
         guard let raw = try? await webView.evaluateJavaScript("window.__doorlist.scan()") as? String,
               let data = raw.data(using: .utf8),
@@ -595,7 +606,7 @@ final class WebBookingModel: ObservableObject {
             .replacingOccurrences(of: #"\s+Tickets?,.*$"#, with: "", options: .regularExpression)
     }
 
-    static func date(_ raw: String) -> Date? {
+    nonisolated static func date(_ raw: String) -> Date? {
         let iso = ISO8601DateFormatter()
         if let d = iso.date(from: raw) { return d }
         iso.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
@@ -627,6 +638,7 @@ struct WebBookingView: View {
     @State private var remember = true
     @FocusState private var focused: Bool
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     init(link: EventLink, onClose: @escaping () -> Void) {
         _model = StateObject(wrappedValue: WebBookingModel(link: link))
@@ -649,7 +661,7 @@ struct WebBookingView: View {
             .overlay { if case .done(let status, let already) = model.phase { doneCard(status, already) } }
             .animation(Theme.spring, value: model.asks)
             .animation(Theme.spring, value: model.phase)
-            .navigationTitle(model.eventTitle ?? model.platform.name)
+            .navigationTitle(model.eventTitle ?? (model.platform == .web ? "Event" : model.platform.name))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) { Button("Close", action: onClose) }
@@ -741,7 +753,7 @@ struct WebBookingView: View {
                     }
                 }
                 .padding(.leading, 12).padding(.trailing, 4)
-                .background(Color(.tertiarySystemFill),
+                .background(Color.fill,
                             in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
                 rememberToggle
                 Button("Fill it in") { submit(ask) }
@@ -752,12 +764,12 @@ struct WebBookingView: View {
         .padding(18)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .padding(12)
-        .transition(.move(edge: .bottom).combined(with: .opacity))
+        .transition(reduceMotion ? .opacity : .move(edge: .bottom).combined(with: .opacity))
         .id(ask.id)
         .onAppear {
             answerText = ""
             remember = true
-            focused = ask.options == nil && !ask.isCheckbox
+            focused = (ask.options?.isEmpty ?? true) && !ask.isCheckbox
         }
     }
 
@@ -794,6 +806,7 @@ struct WebBookingView: View {
             .padding(24)
             .background(Color(.systemBackground), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
             .padding(24)
+            .accessibilityAddTraits(.isModal)
         }
         .transition(.opacity)
     }
@@ -802,7 +815,7 @@ struct WebBookingView: View {
 /// The in-app browser. Uses the default data store, so a Partiful or Eventbrite
 /// sign-in made once stays signed in for every later booking.
 private struct EventPageWebView: UIViewRepresentable {
-    @ObservedObject var model: WebBookingModel
+    let model: WebBookingModel
 
     func makeCoordinator() -> Coordinator { Coordinator() }
 
@@ -812,6 +825,7 @@ private struct EventPageWebView: UIViewRepresentable {
         config.applicationNameForUserAgent = "Version/18.0 Mobile/15E148 Safari/604.1"
         let view = WKWebView(frame: .zero, configuration: config)
         view.allowsBackForwardNavigationGestures = true
+        view.uiDelegate = context.coordinator
         model.webView = view
         context.coordinator.progress = view.observe(\.estimatedProgress) { [weak model] web, _ in
             let value = web.estimatedProgress
@@ -823,7 +837,15 @@ private struct EventPageWebView: UIViewRepresentable {
 
     func updateUIView(_ uiView: WKWebView, context: Context) {}
 
-    final class Coordinator {
+    @MainActor
+    final class Coordinator: NSObject, WKUIDelegate {
         var progress: NSKeyValueObservation?
+
+        /// target=_blank links and window.open load here, in the same page, instead of going nowhere.
+        func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
+                     for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
+            if navigationAction.targetFrame == nil { webView.load(navigationAction.request) }
+            return nil
+        }
     }
 }

@@ -29,7 +29,7 @@ struct FoundEvent: Identifiable, Hashable, Decodable {
     var siteName: String {
         guard platform == .web else { return platform.name }
         guard let host = URL(string: url)?.host, host.contains(".") else { return "the event site" }
-        return host.replacingOccurrences(of: "www.", with: "")
+        return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
     }
 
     /// Safe to book without the person picking: checked, free, open, fits, no clash.
@@ -174,7 +174,8 @@ enum EventSearch {
     /// Same event, different link dressing: no query, no trailing slash, no www.
     static func normalize(_ raw: String) -> String {
         guard var c = URLComponents(string: raw) else { return raw.lowercased() }
-        c.host = c.host?.lowercased().replacingOccurrences(of: "www.", with: "")
+        c.host = c.host?.lowercased()
+        if let host = c.host, host.hasPrefix("www.") { c.host = String(host.dropFirst(4)) }
         if c.host == "lu.ma" { c.host = "luma.com" }
         c.query = nil
         c.fragment = nil
