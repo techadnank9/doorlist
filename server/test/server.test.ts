@@ -61,6 +61,10 @@ describe("links", () => {
     assert.ok(!isEventPage("https://www.eventbrite.com/d/ca--san-francisco/free--events/"));
     assert.ok(isEventPage("https://www.meetup.com/sf-go/events/312345678/"));
     assert.ok(!isEventPage("https://www.meetup.com/sf-go/"));
+    assert.ok(isEventPage("https://cerebralvalley.ai/e/meta-ai-developer-hackathon?utm_source=cv-events"));
+    assert.ok(!isEventPage("https://cerebralvalley.ai/events"));
+    assert.ok(!isEventPage("https://cerebralvalley.ai/e/events"));
+    assert.ok(!isEventPage("https://cerebralvalley.ai/events/remote"));
   });
 
   test("normalizes the same event to one key", () => {
@@ -85,6 +89,17 @@ describe("page checks", () => {
     assert.equal(v.title, "Astronomy Night");
     assert.equal(v.lowestPrice, 0);
     assert.equal(v.soldOut, false);
+  });
+
+  test("reads a Cerebral Valley hackathon, typed as both Event and Hackathon", () => {
+    const page = `<script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@type": "WebSite", name: "Cerebral Valley" })}</script>
+      <script type="application/ld+json">${JSON.stringify({ "@type": ["Event", "Hackathon"], name: "Agents Hackathon",
+        startDate: "2099-10-23T15:00:00.000Z", isAccessibleForFree: true, location: { "@type": "Place", name: "Shack15", address: { addressLocality: "San Francisco" } } })}</script>`;
+    const v = parseEventHTML(page);
+    assert.ok(v && v !== "cancelled");
+    assert.equal(v.title, "Agents Hackathon");
+    assert.equal(v.lowestPrice, 0);
+    assert.equal(v.place, "Shack15, San Francisco");
   });
 
   test("cancelled and sold out events are recognised", () => {

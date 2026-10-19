@@ -6,6 +6,7 @@ enum EventPlatform: String, Codable, Hashable {
     case luma
     case partiful
     case eventbrite
+    case cerebralValley
     case web
 
     var name: String {
@@ -13,6 +14,7 @@ enum EventPlatform: String, Codable, Hashable {
         case .luma: "Luma"
         case .partiful: "Partiful"
         case .eventbrite: "Eventbrite"
+        case .cerebralValley: "Cerebral Valley"
         case .web: "the event site"
         }
     }
@@ -25,6 +27,7 @@ enum EventPlatform: String, Codable, Hashable {
         if h == "lu.ma" || h.hasSuffix("luma.com") { self = .luma }
         else if h.hasSuffix("partiful.com") { self = .partiful }
         else if h.range(of: #"(^|\.)eventbrite\.[a-z.]+$"#, options: .regularExpression) != nil { self = .eventbrite }
+        else if h == "cerebralvalley.ai" || h.hasSuffix(".cerebralvalley.ai") { self = .cerebralValley }
         else { self = .web }
     }
 }
@@ -56,6 +59,12 @@ struct EventLink: Hashable {
                 if path.hasPrefix("/e/"), path.count > 3 { return EventLink(platform: .partiful, url: url) }
             case .eventbrite:
                 if path.contains("/e/") { return EventLink(platform: .eventbrite, url: url) }
+            case .cerebralValley:
+                // Its own events live at /e/<slug>; /events and /e/events are listings.
+                let parts = path.split(separator: "/")
+                if parts.count == 2, parts[0] == "e", parts[1] != "events" {
+                    return EventLink(platform: .cerebralValley, url: url)
+                }
             case .web:
                 // Bare domains like "example.com" in a sentence aren't event pages.
                 if allowAnySite, ns.substring(with: match.range).lowercased().hasPrefix("http"),

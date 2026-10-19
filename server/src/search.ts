@@ -129,7 +129,7 @@ async function modelCandidates(
 ${ctx.whereAndWhen}
 ${ctx.tasteLine}
 
-Search widely: luma.com, partiful.com, eventbrite.com, meetup.com, venue and organiser sites, ticketing sites. Only events that haven't started. Give the direct page where someone RSVPs or gets tickets, never an article, list or search page. If the request doesn't mention paying, prefer free events. Rank by how well each fits.
+Search widely: luma.com, partiful.com, eventbrite.com, meetup.com, cerebralvalley.ai (AI events and hackathons), venue and organiser sites, ticketing sites. Only events that haven't started. Give the direct page where someone RSVPs or gets tickets, never an article, list or search page. If the request doesn't mention paying, prefer free events. Rank by how well each fits.
 
 If the request is too vague to search well even knowing where and when they are (no hint at all of what kind of event), don't search; reply with one short question and 3 or 4 likely answers:
 {"question":"","options":["",""]}
@@ -183,7 +183,7 @@ match is 0 to 1. Up to 10 events. If nothing fits, {"events":[]}.`;
 
 // MARK: Step 2, Exa
 
-const eventSites = ["luma.com", "lu.ma", "partiful.com", "eventbrite.com", "meetup.com"];
+const eventSites = ["luma.com", "lu.ma", "partiful.com", "eventbrite.com", "meetup.com", "cerebralvalley.ai"];
 
 async function exaCandidates(input: SearchInput, ctx: Context, meter: Meter): Promise<Candidate[]> {
   if (!config.exaKey) return [];

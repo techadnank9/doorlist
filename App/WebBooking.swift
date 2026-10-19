@@ -517,7 +517,10 @@ final class WebBookingModel: ObservableObject {
 
     private static let entryWords = ["rsvp", "going", "i'm going", "im going", "register", "get tickets", "get ticket",
                                      "reserve a spot", "reserve", "request to join", "join waitlist",
-                                     "join the waitlist", "attend", "count me in", "join event", "sign up for event"]
+                                     "join the waitlist", "attend", "count me in", "join event", "sign up for event",
+                                     "apply now", "apply to attend", "apply to join", "apply to hack", "request invite"]
+    /// Matched only exactly, so "Apply coupon" or "Apply code" is never tapped.
+    private static let exactEntryWords: Set<String> = ["apply"]
     /// Links are only followed for these; "Sign up" or "Join" links in a site's
     /// header make an account, not a booking.
     private static let linkEntryWords: Set<String> = ["rsvp", "register", "get tickets", "get ticket", "reserve a spot"]
@@ -535,6 +538,7 @@ final class WebBookingModel: ObservableObject {
         if never.contains(where: { t == $0 || t.hasPrefix($0 + " ") }) { return nil }
         if ["$", "€", "£", "₹"].contains(where: t.contains) { return nil }
         if let i = submitWords.firstIndex(of: t) { return isLink ? nil : 100 + i }
+        if exactEntryWords.contains(t) { return isLink ? nil : entryWords.count }
         if let i = entryWords.firstIndex(where: { t == $0 || t.hasPrefix($0 + " ") }) {
             return !isLink || linkEntryWords.contains(entryWords[i]) ? i : nil
         }

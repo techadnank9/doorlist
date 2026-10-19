@@ -1,12 +1,13 @@
 /** Event link rules, kept in step with the app's EventLink.swift. */
 
-export type Platform = "luma" | "partiful" | "eventbrite" | "web";
+export type Platform = "luma" | "partiful" | "eventbrite" | "cerebralvalley" | "web";
 
 export function platformOf(host: string): Platform {
   const h = host.toLowerCase();
   if (h === "lu.ma" || h.endsWith("luma.com")) return "luma";
   if (h.endsWith("partiful.com")) return "partiful";
   if (/(^|\.)eventbrite\.[a-z.]+$/.test(h)) return "eventbrite";
+  if (h === "cerebralvalley.ai" || h.endsWith(".cerebralvalley.ai")) return "cerebralvalley";
   return "web";
 }
 
@@ -45,6 +46,9 @@ export function isEventPage(raw: string): boolean {
       return path.startsWith("/e/") && path.length > 3;
     case "eventbrite":
       return path.includes("/e/");
+    case "cerebralvalley":
+      // Its own events live at /e/<slug>; /events and /e/events are listings.
+      return /^\/e\/[^/]+\/?$/.test(path) && !/^\/e\/events\/?$/.test(path);
     case "web":
       if (url.hostname.includes("meetup.com")) return /\/events\/\d+/.test(path);
       return path.length > 1;
