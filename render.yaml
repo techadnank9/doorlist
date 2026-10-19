@@ -30,7 +30,7 @@ services:
       - key: ADMIN_TOKEN
         generateValue: true
       - key: APPLE_BUNDLE_ID
-        value: com.techadnank9.doorlist
+        value: com.doorlist.app
       - key: OPENAI_MODEL
         value: gpt-6-astra
       - key: OPENAI_API_KEY

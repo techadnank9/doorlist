@@ -2,7 +2,7 @@ import Foundation
 import Security
 
 enum AppGroup {
-    static let id = "group.com.techadnank9.doorlist"
+    static let id = "group.com.doorlist.app"
 
     /// The folder the app and the share extension both read. Falls back to the
     /// app's own Application Support when the group is not provisioned (unsigned
@@ -61,7 +61,7 @@ struct LumaSession: Codable {
 }
 
 enum SessionStore {
-    private static let service = "com.techadnank9.doorlist.luma"
+    private static let service = "com.doorlist.app.luma"
     private static let account = "session"
 
     static func load() -> LumaSession? {

@@ -85,7 +85,7 @@ enum DoorlistAPI {
 /// The signed-in Doorlist account: just the server session, in the Keychain.
 /// The person's details stay in AnswerStore on the phone.
 enum Account {
-    private static let service = "com.techadnank9.doorlist.session"
+    private static let service = "com.doorlist.app.session"
 
     static var isSignedIn: Bool { session != nil }
 

@@ -28,6 +28,9 @@
 	<dict>
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
+	</dict>
+	<key>NSExtension</key>
+	<dict>
 		<key>NSExtensionAttributes</key>
 		<dict>
 			<key>NSExtensionActivationRule</key>
@@ -38,9 +41,6 @@
 				<integer>1</integer>
 			</dict>
 		</dict>
-	</dict>
-	<key>NSExtension</key>
-	<dict>
 		<key>NSExtensionPointIdentifier</key>
 		<string>com.apple.share-services</string>
 		<key>NSExtensionPrincipalClass</key>

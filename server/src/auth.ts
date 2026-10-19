@@ -4,7 +4,7 @@ const appleKeysURL = "https://appleid.apple.com/auth/keys";
 let appleKeys: { keys: (JsonWebKey & { kid: string })[]; fetchedAt: number } | null = null;
 
 const secret = () => process.env.SESSION_SECRET || "";
-const bundleID = () => process.env.APPLE_BUNDLE_ID || "com.techadnank9.doorlist";
+const bundleID = () => process.env.APPLE_BUNDLE_ID || "com.doorlist.app";
 
 /**
  * Checks a Sign in with Apple identity token (RS256 JWT signed by Apple)
