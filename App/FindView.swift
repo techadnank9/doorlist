@@ -353,6 +353,7 @@ struct FindView: View {
 
     private func search() {
         focused = false
+        Telemetry.capture("search_submitted", ["auto_book": autoBook])
         Task { await Notifier.requestPermission() }
         model.search(autoBook: autoBook) { link in booking = BookingRequest(input: link.url.absoluteString) }
     }

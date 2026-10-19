@@ -16,7 +16,14 @@ enum Telemetry {
             config.captureScreenViews = false   // SwiftUI screens are tracked by name below instead
             config.personProfiles = .identifiedOnly
             config.sessionReplay = false
+            // In-app surveys: written and targeted in PostHog, shown natively here.
+            config.surveys = true
             PostHogSDK.shared.setup(config)
+            if Account.isSignedIn { identify() }
+            HistoryStore.onAdd = { record in
+                capture("event_booked", ["site": record.site.rawValue, "status": record.status.rawValue,
+                                         "answers_sent": record.answers?.count ?? 0])
+            }
         }
         if let dsn = info["SentryDSN"] as? String, !dsn.isEmpty {
             SentrySDK.start { options in
@@ -28,6 +35,19 @@ enum Telemetry {
                 #endif
             }
         }
+    }
+
+    /// Ties this phone's events to the account, by the anonymous id the server gave at sign in,
+    /// so the server's search-quality events and the app's line up. Never the Apple id or an email.
+    static func identify() {
+        guard let id = UserDefaults.standard.string(forKey: "analyticsId") else { return }
+        PostHogSDK.shared.identify(id)
+    }
+
+    /// Signed out or account deleted: the next person on this phone starts anonymous.
+    static func reset() {
+        UserDefaults.standard.removeObject(forKey: "analyticsId")
+        PostHogSDK.shared.reset()
     }
 
     /// One thing that happened, e.g. "explore_event_opened" with ["source": "luma"].

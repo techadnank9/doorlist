@@ -1,4 +1,5 @@
 import SwiftUI
+import PostHog
 import UserNotifications
 
 @main
@@ -109,16 +110,25 @@ struct RootView: View {
     var body: some View {
         TabView {
             HomeView(showConnect: $showConnect, booking: $booking)
+                .postHogScreenView("Events")
                 .tabItem { Label("Events", systemImage: "ticket.fill") }
             ExploreView(booking: $booking)
+                .postHogScreenView("Explore")
                 .tabItem { Label("Explore", systemImage: "safari.fill") }
             FindView(booking: $booking)
+                .postHogScreenView("Find")
                 .tabItem { Label("Find", systemImage: "sparkle.magnifyingglass") }
             AnswersView(showConnect: $showConnect)
+                .postHogScreenView("Answers")
                 .tabItem { Label("Answers", systemImage: "person.text.rectangle.fill") }
         }
         .sheet(isPresented: $showConnect) {
             ConnectLumaView { state.refresh() }
+        }
+        .onChange(of: booking?.id) { _, id in
+            guard id != nil, let request = booking else { return }
+            let site = EventLink.find(in: request.input, allowAnySite: true)?.platform.rawValue ?? "unknown"
+            Telemetry.capture("booking_opened", ["site": site])
         }
         .sheet(item: $booking, onDismiss: { state.refresh() }) { request in
             if let link = EventLink.find(in: request.input, allowAnySite: true), link.platform != .luma {

@@ -1,3 +1,4 @@
+import { captureGeneration } from "./analytics.js";
 import { config } from "./config.js";
 import { isEventPage, normalize, platformOf, type Platform } from "./links.js";
 import type { Meter } from "./meter.js";
@@ -336,6 +337,7 @@ export class SearchError extends Error {}
 
 /** POST /responses. Retries once without `reasoning` for models that don't take it. */
 async function respond(body: Record<string, unknown>, meter: Meter): Promise<any> {
+  const started = performance.now();
   const res = await fetch(`${config.openAIBase}/responses`, {
     method: "POST",
     headers: { Authorization: `Bearer ${config.openAIKey}`, "Content-Type": "application/json" },
@@ -343,11 +345,18 @@ async function respond(body: Record<string, unknown>, meter: Meter): Promise<any
     signal: AbortSignal.timeout(150_000),
   });
   const json = (await res.json().catch(() => ({}))) as any;
-  if (res.ok) {
-    meter.openAI(json);
-    return json;
-  }
+  const costBefore = meter.total;
+  if (res.ok) meter.openAI(json);
   const message: string = json?.error?.message ?? "";
+  // One LLM analytics event per call; every call in a search shares the request's trace id.
+  captureGeneration({
+    who: meter.who, traceId: meter.req, model: String(body.model ?? config.model), input: body.input,
+    output: res.ok ? outputText(json) : "", inputTokens: Number(json?.usage?.input_tokens ?? 0) || 0,
+    outputTokens: Number(json?.usage?.output_tokens ?? 0) || 0, costUsd: meter.total - costBefore,
+    latencySeconds: (performance.now() - started) / 1000, status: res.status,
+    error: res.ok ? undefined : message || `HTTP ${res.status}`,
+  });
+  if (res.ok) return json;
   if (res.status === 400 && body.reasoning && /reasoning/i.test(message)) {
     const { reasoning: _reasoning, ...rest } = body;
     return respond(rest, meter);

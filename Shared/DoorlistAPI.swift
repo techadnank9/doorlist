@@ -78,6 +78,7 @@ enum DoorlistAPI {
             throw VoiceError.message(message(from: data, status: status))
         }
         Account.session = session
+        if let id = json["analyticsId"] as? String { UserDefaults.standard.set(id, forKey: "analyticsId") }
         return json["email"] as? String
     }
 }

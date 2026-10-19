@@ -1,4 +1,5 @@
 import { Sentry, sentryOn } from "./instrument.js";
+import { analyticsId, shutdownAnalytics } from "./analytics.js";
 import { serve } from "@hono/node-server";
 import { Hono, type Context } from "hono";
 import { logger } from "hono/logger";
@@ -50,7 +51,7 @@ app.post("/v1/session", async (c) => {
   if (typeof body?.identityToken !== "string") return c.json({ error: "Missing identity token." }, 400);
   try {
     const apple = await verifyAppleToken(body.identityToken);
-    return c.json({ session: issueSession(apple.sub), email: apple.email ?? null });
+    return c.json({ session: issueSession(apple.sub), email: apple.email ?? null, analyticsId: analyticsId(apple.sub) });
   } catch {
     return c.json({ error: "Couldn't confirm that Apple sign in." }, 401);
   }
@@ -156,4 +157,6 @@ if (process.env.NODE_ENV !== "test") {
   serve({ fetch: app.fetch, port: config.port }, (info) => {
     console.log(`Doorlist server on http://localhost:${info.port}`);
   });
+  // Render stops the old instance with SIGTERM on each deploy; send queued analytics first.
+  process.once("SIGTERM", () => void shutdownAnalytics().finally(() => process.exit(0)));
 }

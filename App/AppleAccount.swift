@@ -28,6 +28,8 @@ enum AppleAccount {
             }
             do {
                 let serverEmail = try await DoorlistAPI.signIn(identityToken: token)
+                Telemetry.identify()
+                Telemetry.capture("signed_in")
                 // Bring this account's answers and bookings onto this phone first,
                 // so nothing typed below overwrites them with blanks.
                 await ProfileSync.now()

@@ -56,6 +56,7 @@ struct OnboardingView: View {
     }
 
     private func finish() {
+        Telemetry.capture("onboarding_completed")
         Task { await Notifier.requestPermission() }
         onFinish()
     }

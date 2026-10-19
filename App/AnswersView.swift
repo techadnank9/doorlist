@@ -150,7 +150,7 @@ struct AnswersView: View {
                 Section {
                     Label("Signed in with Apple", systemImage: "checkmark.icloud.fill")
                         .foregroundStyle(.green)
-                    Button("Sign out") { Account.session = nil; state.refresh() }
+                    Button("Sign out") { Account.session = nil; Telemetry.reset(); state.refresh() }
                     Button("Delete account", role: .destructive) { confirmDelete = true }
                     if let accountError { Text(accountError).font(.footnote).foregroundStyle(.red) }
                 } header: {
@@ -194,6 +194,7 @@ struct AnswersView: View {
                     Task {
                         do {
                             try await ProfileSync.deleteAccount()
+                            Telemetry.reset()
                             accountError = nil
                         } catch {
                             accountError = error.localizedDescription

@@ -274,6 +274,8 @@ enum BookingStatus: String, Codable {
 
 final class HistoryStore: @unchecked Sendable {
     static let shared = HistoryStore()
+    /// Called after each booking is saved; the app uses it for analytics. Unset in the extension.
+    nonisolated(unsafe) static var onAdd: ((BookingRecord) -> Void)?
 
     private let url = AppGroup.folder.appendingPathComponent("history.json")
     private let lock = NSLock()
@@ -289,6 +291,7 @@ final class HistoryStore: @unchecked Sendable {
         records.insert(record, at: 0)
         save(records)
         notifyDataChanged()
+        Self.onAdd?(record)
     }
 
     /// Takes the account's merged copy after a sync, keeping bookings made here since it was sent.
