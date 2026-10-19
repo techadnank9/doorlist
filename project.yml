@@ -17,7 +17,7 @@ settings:
   base:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "2"
+    CURRENT_PROJECT_VERSION: "3"
     DEVELOPMENT_TEAM: S2UTA2J3GD
     CODE_SIGN_STYLE: Automatic
     TARGETED_DEVICE_FAMILY: "1"
@@ -39,6 +39,9 @@ targets:
       path: App/Info.plist
       properties:
         CFBundleDisplayName: Doorlist
+        # The version settings above; without these XcodeGen writes a fixed 1.0 (1).
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         UILaunchScreen:
           UIColorName: Canvas
           UIImageName: LaunchMark
@@ -85,6 +88,9 @@ targets:
       path: ShareExtension/Info.plist
       properties:
         CFBundleDisplayName: Doorlist
+        # The version settings above; without these XcodeGen writes a fixed 1.0 (1).
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.share-services
           NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShareViewController
