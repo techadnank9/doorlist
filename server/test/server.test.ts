@@ -201,6 +201,15 @@ describe("POST /v1/search", () => {
     assert.equal(other.status, 200, "another install with the same id starts its own search");
   });
 
+  test("hands the finished search to a plain GET, for the app's background fetch", async () => {
+    await searchLines("rooftop party saturday", "install-result", { requestId: "result-0000-0001" });
+    const res = await app.request("/v1/search/result?requestId=result-0000-0001", { headers: headers("install-result") });
+    assert.equal(res.status, 200);
+    assert.ok(((await res.json()) as any).result.events.length > 0);
+    const other = await app.request("/v1/search/result?requestId=result-0000-0001", { headers: headers("install-nosy") });
+    assert.equal(other.status, 404, "another install can't read it");
+  });
+
   test("caps searches per install per day", async () => {
     for (let i = 0; i < 3; i++) await searchLines("rooftop party", "install-limit");
     const res = await app.request("/v1/search", { method: "POST", headers: headers("install-limit"), body: '{"request":"one more"}' });

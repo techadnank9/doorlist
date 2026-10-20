@@ -62,6 +62,13 @@ enum Notifier {
              body: "Tap to book \(eventTitle ?? "this event"). Your saved answers are ready.", link: url)
     }
 
+    /// A search finished while the app was in the background, with nothing to book by itself.
+    static func searchReady(_ count: Int, query: String) {
+        let what = query.isEmpty ? "your search" : "\u{201C}\(query)\u{201D}"
+        post(title: count == 0 ? "No events for \(what)" : "\(count) event\(count == 1 ? "" : "s") for \(what)",
+             body: count == 0 ? "Try different words." : "Open Doorlist to pick one.", link: nil)
+    }
+
     static func found(_ eventName: String, url: URL) {
         post(title: "Found it: \(eventName)", body: "Tap to book it.", link: url)
     }

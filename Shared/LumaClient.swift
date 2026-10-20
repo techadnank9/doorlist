@@ -57,6 +57,8 @@ struct LumaClient {
         var page: LumaEventPage
         /// Set when the signed-in person already has a ticket or request.
         var existingStatus: BookingStatus?
+        /// Set when a host invited the signed-in person; registering with it accepts the invite.
+        var inviteId: String?
     }
 
     func fetchEvent(_ reference: String) async throws -> FetchedEvent {
@@ -80,7 +82,8 @@ struct LumaClient {
 
         let guest = data["guest_data"] as? [String: Any]
         let status = (guest?["approval_status"] as? String).flatMap(BookingStatus.init(rawValue:))
-        return FetchedEvent(page: page, existingStatus: status)
+        let invite = (data["event_invite"] as? [String: Any])?["api_id"] as? String
+        return FetchedEvent(page: page, existingStatus: status, inviteId: invite)
     }
 
     func fetchUser() async throws -> LumaUser {
@@ -108,6 +111,7 @@ struct LumaClient {
         var phoneNumber: String
         var ticketTypeId: String?
         var answers: [[String: Any]]
+        var inviteId: String?
     }
 
     /// Mirrors the payload luma.com builds in its registration form. Joins the
@@ -142,7 +146,7 @@ struct LumaClient {
             "expected_amount_cents": 0,
             "expected_amount_tax": 0,
             "currency": null,
-            "event_invite_api_id": null,
+            "event_invite_api_id": r.inviteId ?? null,
             "ticket_type_to_selection": tickets,
             "solana_address": null,
             "solana_wallet_type": null,

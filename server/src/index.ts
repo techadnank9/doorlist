@@ -91,6 +91,16 @@ app.post("/v1/search", async (c) => {
   });
 });
 
+// The final outcome of a search the app started, as one JSON body. iOS fetches this in the
+// background while the app is suspended, then wakes the app with it.
+app.get("/v1/search/result", async (c) => {
+  const who = caller(c);
+  if (!who) return c.json({ error: "Missing install id." }, 400);
+  const job = findJob(jobKey(who, c.req.query("requestId")));
+  if (!job) return c.json({ error: "That search isn't running anymore." }, 404);
+  return c.json(await job.done);
+});
+
 app.post("/v1/transcribe", async (c) => {
   const who = caller(c);
   if (!who) return c.json({ error: "Missing install id." }, 400);

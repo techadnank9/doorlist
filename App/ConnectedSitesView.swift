@@ -44,6 +44,7 @@ struct ConnectedSitesView: View {
     @State private var signingIn: ConnectedSite?
     /// Ids of the sites marked connected, re-read whenever that may have changed.
     @State private var connected: Set<String> = []
+    @State private var disconnecting: ConnectedSite?
 
     var body: some View {
         List {
@@ -51,7 +52,7 @@ struct ConnectedSitesView: View {
                 ForEach(ConnectedSite.all) { site in
                     let isConnected = connected.contains(site.id)
                     Button {
-                        if !isConnected { signingIn = site }
+                        if isConnected { disconnecting = site } else { signingIn = site }
                     } label: {
                         HStack {
                             Text(site.name).foregroundStyle(.primary)
@@ -70,10 +71,10 @@ struct ConnectedSitesView: View {
                             }
                         }
                     }
-                    .accessibilityHint(isConnected ? "Swipe to disconnect" : "Opens \(site.name)'s sign-in page")
+                    .accessibilityHint(isConnected ? "Asks to disconnect \(site.name)" : "Opens \(site.name)'s sign-in page")
                 }
             } footer: {
-                Text("Sign in once on the site's own page and bookings there start signed in. Logins stay on this phone and never sync. Swipe a connected site to disconnect it.")
+                Text("Sign in once on the site's own page and bookings there start signed in. Logins stay on this phone and never sync. Tap a connected site to disconnect it.")
             }
         }
         .scrollContentBackground(.hidden)
@@ -82,6 +83,15 @@ struct ConnectedSitesView: View {
         .navigationTitle("Other event sites")
         .sheet(item: $signingIn, onDismiss: reloadConnected) { site in
             SiteSignInSheet(site: site)
+        }
+        .confirmationDialog(disconnecting.map { "Disconnect \($0.name)?" } ?? "",
+                            isPresented: Binding(get: { disconnecting != nil }, set: { if !$0 { disconnecting = nil } }),
+                            titleVisibility: .visible, presenting: disconnecting) { site in
+            Button("Disconnect", role: .destructive) {
+                Task { await site.forget(); reloadConnected() }
+            }
+        } message: { site in
+            Text("Signs Doorlist out of \(site.name) on this phone. Bookings there will ask you to sign in again.")
         }
         .onAppear(perform: reloadConnected)
     }

@@ -71,6 +71,8 @@ struct Clarification: Hashable, Encodable {
 
 enum SearchStage: Equatable {
     case locating
+    /// Not a step of its own: the server found a place in the request and searches there.
+    case searchingIn(String)
     case searching
     case checking(Int)
     case ranking
@@ -156,7 +158,10 @@ enum EventSearch {
         guard let object = try? JSONSerialization.jsonObject(with: Data(line.utf8)) as? [String: Any] else { return nil }
         if let stage = object["stage"] as? String {
             switch stage {
-            case "searching": await progress(.searching)
+            case "searching":
+                // The place named in the request ("in bay area"), when there is one.
+                if let area = object["area"] as? String, !area.isEmpty { await progress(.searchingIn(area)) }
+                await progress(.searching)
             case "checking": await progress(.checking(object["count"] as? Int ?? 0))
             case "ranking": await progress(.ranking)
             default: break
@@ -167,6 +172,14 @@ enum EventSearch {
             return try outcome(from: result)
         }
         return nil
+    }
+
+    /// The single JSON body iOS fetched in the background: `{"result": ...}` or `{"error": "..."}`.
+    @MainActor static func finished(_ data: Data) throws -> SearchOutcome {
+        guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw SearchError.unreadable }
+        if let message = object["error"] as? String { throw SearchError.server(message) }
+        guard let result = object["result"] as? [String: Any] else { throw SearchError.unreadable }
+        return try outcome(from: result)
     }
 
     private static func outcome(from result: [String: Any]) throws -> SearchOutcome {

@@ -17,6 +17,8 @@ final class FindModel: ObservableObject {
     /// The match Doorlist picked to book by itself, if any.
     @Published var autoPicked: FoundEvent?
     @Published var showAll = false
+    /// The place the request names, once the server has read it; otherwise the phone's town is shown.
+    @Published private(set) var area: String?
     @Published private(set) var lastQuery = ""
     private var clarifications: [Clarification] = []
     private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
@@ -27,6 +29,10 @@ final class FindModel: ObservableObject {
     private var resumeOnActive: NSObjectProtocol?
     /// Rejoins made without a tap, capped so a phone that's truly offline doesn't loop.
     private var autoResumes = 0
+    /// How the running search should finish: whether to book, and how.
+    private var finish: (autoBook: Bool, book: (EventLink) -> Void)?
+    /// The request whose outcome is already showing, from the stream or from iOS's background fetch.
+    private var delivered: String?
 
     init() {
         // iOS suspends the app soon after it leaves the screen, which drops the search's
@@ -35,6 +41,30 @@ final class FindModel: ObservableObject {
             forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
         ) { [weak self] _ in
             MainActor.assumeIsolated { self?.resumeIfDropped() }
+        }
+        // The same search's result, fetched by iOS while the app was suspended.
+        SearchFollowUp.shared.deliver = { [weak self] id, outcome in self?.apply(outcome, for: id) }
+    }
+
+    /// Shows a search's outcome once, whichever way it arrived first.
+    private func apply(_ outcome: SearchOutcome, for id: String) {
+        guard id == requestId, delivered != id, let finish else { return }
+        delivered = id
+        resumable = nil
+        SearchFollowUp.shared.cancel(requestId: id)
+        switch outcome {
+        case .question(let q, let options):
+            phase = .asking(question: q, options: options)
+        case .events(let found):
+            results = found
+            phase = .results
+            let active = UIApplication.shared.applicationState == .active
+            guard finish.autoBook, let best = found.first, best.canAutoBook, let link = best.link else {
+                if !active { Notifier.searchReady(found.count, query: lastQuery) }
+                return
+            }
+            autoPicked = best
+            if active { finish.book(link) } else { Notifier.found(best.title, url: link.url) }
         }
     }
 
@@ -86,7 +116,10 @@ final class FindModel: ObservableObject {
             autoResumes = 0
         }
         resumable = nil
+        finish = (autoBook, book)
         let id = requestId
+        var followingUp = false
+        area = nil
         phase = .working(.locating)
         results = []
         autoPicked = nil
@@ -107,22 +140,17 @@ final class FindModel: ObservableObject {
             guard let self else { return }
             do {
                 let outcome = try await EventSearch.run(request, clarifications: asked, requestId: id) { [weak self] stage in
-                    self?.phase = .working(stage)
-                }
-                switch outcome {
-                case .question(let q, let options):
-                    phase = .asking(question: q, options: options)
-                case .events(let found):
-                    results = found
-                    phase = .results
-                    guard autoBook, let best = found.first, best.canAutoBook, let link = best.link else { return }
-                    autoPicked = best
-                    if UIApplication.shared.applicationState == .active {
-                        book(link)
-                    } else {
-                        Notifier.found(best.title, url: link.url)
+                    guard let self, self.delivered != id else { return }
+                    if case .searchingIn(let area) = stage { self.area = area } else { self.phase = .working(stage) }
+                    // The server has the search now: have iOS fetch its result too, in case the app is suspended.
+                    if case .searching = stage, !followingUp {
+                        followingUp = true
+                        SearchFollowUp.shared.start(requestId: id, query: request)
                     }
                 }
+                apply(outcome, for: id)
+            } catch _ where delivered == id {
+                // The background fetch already showed it; the stream's drop doesn't matter.
             } catch SearchError.connectionLost {
                 resumable = (autoBook, book)
                 phase = .failed(SearchError.connectionLost.localizedDescription)
@@ -187,7 +215,7 @@ struct FindView: View {
     @ViewBuilder private var content: some View {
         switch model.phase {
         case .idle: examplesRow
-        case .working(let stage): ProgressSteps(stage: stage, place: location.place?.city)
+        case .working(let stage): ProgressSteps(stage: stage, place: model.area.map { "in \($0)" } ?? location.place?.city.map { "near \($0)" })
         case .asking(let question, let options): followUpCard(question, options)
         case .results: resultsList
         case .failed(let message): failure(message)
@@ -420,13 +448,13 @@ private struct ProgressSteps: View {
         let order: [SearchStage] = [.locating, .searching, .checking(0), .ranking]
         let index: Int = switch stage {
         case .locating: 0
-        case .searching: 1
+        case .searchingIn, .searching: 1
         case .checking: 2
         case .ranking: 3
         }
         let checking: String = if case .checking(let n) = stage, n > 0 { "Opening \(n) event pages to check them" } else { "Opening each event page to check it" }
         let titles = [
-            place.map { "Searching near \($0)" } ?? "Finding where to look",
+            place.map { "Searching \($0)" } ?? "Finding where to look",
             "Looking across Luma, Partiful, Eventbrite and the web",
             checking,
             "Picking the best fit",

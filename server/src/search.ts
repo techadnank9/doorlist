@@ -38,7 +38,7 @@ export interface FoundEvent {
 }
 
 export type SearchResult = { events: FoundEvent[] } | { question: string; options: string[] };
-export type Stage = { stage: "searching" } | { stage: "checking"; count: number } | { stage: "ranking" };
+export type Stage = { stage: "searching"; area?: string } | { stage: "checking"; count: number } | { stage: "ranking" };
 
 interface Candidate extends FoundEvent {
   snippet?: string;
@@ -52,7 +52,8 @@ interface Candidate extends FoundEvent {
  * 4. OpenAI ranks what survived, strictly, against the request.
  */
 export async function search(input: SearchInput, emit: (s: Stage) => void, meter: Meter): Promise<SearchResult> {
-  emit({ stage: "searching" });
+  const area = namedArea(input.request);
+  emit(area ? { stage: "searching", area } : { stage: "searching" });
   const ctx = context(input);
   const [model, exa] = await Promise.all([modelCandidates(input, ctx, meter), exaCandidates(input, ctx, meter)]);
   if ("question" in model) return model;
@@ -90,6 +91,17 @@ interface Context {
   fullRequest: string;
   whereAndWhen: string;
   tasteLine: string;
+}
+
+const notPlaces = /^(the )?(morning|afternoon|evening|night|weekend|week|month|day|summer|winter|spring|fall|person|town|city|area|a (bit|while|few|couple)|an? (hour|minute)s?|my |our |this |next |\d)/i;
+
+/** The place a request names, like "bay area" in "Bollywood party in bay area", or "". */
+export function namedArea(request: string): string {
+  const match = /\b(?:in|near|around)\s+((?:the\s+)?[a-z][a-z .'-]{1,40}?)(?=\s*(?:[,.!?]|$|\b(?:this|next|on|tonight|today|tomorrow|for|with|that|which|under|at)\b))/i
+    .exec(request.trim());
+  if (!match) return "";
+  const area = (match[1] ?? "").trim();
+  return notPlaces.test(area) ? "" : area;
 }
 
 export function context(input: SearchInput): Context {
@@ -188,7 +200,8 @@ const eventSites = ["luma.com", "lu.ma", "partiful.com", "eventbrite.com", "meet
 
 async function exaCandidates(input: SearchInput, ctx: Context, meter: Meter): Promise<Candidate[]> {
   if (!config.exaKey) return [];
-  const near = input.place?.city ? ` in ${input.place.city}` : "";
+  // A place named in the request wins over the phone's town.
+  const near = namedArea(input.request) || !input.place?.city ? "" : ` in ${input.place.city}`;
   const query = `${ctx.fullRequest}${near} event page to RSVP or get tickets`;
   const [onSites, anywhere] = await Promise.all([
     exaSearch(query, eventSites, 12, input.place?.country, meter),

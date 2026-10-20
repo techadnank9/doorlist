@@ -32,6 +32,14 @@ final class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCent
         return true
     }
 
+    /// iOS relaunched the app because a background search fetch finished.
+    func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String,
+                     completionHandler: @escaping () -> Void) {
+        guard identifier == SearchFollowUp.identifier else { return completionHandler() }
+        SearchFollowUp.shared.finishEvents = completionHandler
+        SearchFollowUp.shared.reconnect()
+    }
+
     nonisolated func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification) async
         -> UNNotificationPresentationOptions { [.banner, .sound] }
 

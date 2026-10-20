@@ -45,6 +45,7 @@ struct BookingPlan {
     let page: LumaEventPage
     var fields: [PlanField]
     let ticketTypeId: String?
+    var inviteId: String? = nil
 
     var requiresApproval: Bool {
         page.ticketTypes?.first(where: { $0.apiId == ticketTypeId })?.requireApproval == true
@@ -72,7 +73,10 @@ enum BookingPlanner {
     static func makePlan(_ fetched: LumaClient.FetchedEvent, reference: String,
                          store: AnswerStore = .shared) async throws -> BookingPlan {
         let page = fetched.page
-        if let status = fetched.existingStatus, status != .declined { throw PlanBlocker.alreadyBooked(status) }
+        // An invite isn't a spot yet: booking it is what accepts it.
+        if let status = fetched.existingStatus, status != .declined, status != .invited {
+            throw PlanBlocker.alreadyBooked(status)
+        }
         if page.needsWallet { throw PlanBlocker.wallet }
 
         let types = page.ticketTypes ?? []
@@ -180,7 +184,8 @@ enum BookingPlanner {
             fields.append(field)
         }
 
-        return BookingPlan(reference: reference, page: page, fields: fields, ticketTypeId: ticket?.apiId)
+        return BookingPlan(reference: reference, page: page, fields: fields, ticketTypeId: ticket?.apiId,
+                           inviteId: fetched.inviteId)
     }
 
     /// Typed key, then wording rules, then a saved question with the same or
@@ -283,7 +288,7 @@ enum BookingPlanner {
             eventApiId: plan.page.eventApiId, reference: plan.reference,
             name: name, firstName: first, lastName: last,
             email: value("email"), phoneNumber: phone,
-            ticketTypeId: plan.ticketTypeId, answers: answers
+            ticketTypeId: plan.ticketTypeId, answers: answers, inviteId: plan.inviteId
         )
     }
 

@@ -96,7 +96,7 @@ export function mountExplore(app: Hono) {
 
     const { rows } = await pool.query(
       `SELECT id, title, starts_at, ends_at, all_day, timezone, city, lat, lng, online, url, sources, cover_url,
-              is_free, sold_out, guest_count, topics
+              is_free, sold_out, guest_count, topics, left(description, 1200) AS description
          FROM explore_events WHERE ${clauses.join(" AND ")}
          -- Running now sorts as now, so a month-long online hackathon doesn't sit above tonight's events forever.
          ORDER BY greatest(starts_at, now()), guest_count DESC NULLS LAST, id
@@ -109,6 +109,7 @@ export function mountExplore(app: Hono) {
         id: e.id, title: e.title, startsAt: e.starts_at, endsAt: e.ends_at, allDay: e.all_day, timezone: e.timezone,
         city: e.city, lat: e.lat, lng: e.lng, online: e.online, url: e.url, sources: e.sources,
         image: thumbnail(e.cover_url), isFree: e.is_free, soldOut: e.sold_out, guests: e.guest_count, topics: e.topics,
+        description: e.description ?? null,
       })),
       next: rows.length > PAGE ? String(offset + PAGE) : null,
     });
