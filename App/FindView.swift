@@ -21,7 +21,6 @@ final class FindModel: ObservableObject {
     @Published private(set) var area: String?
     @Published private(set) var lastQuery = ""
     private var clarifications: [Clarification] = []
-    private var backgroundTask: UIBackgroundTaskIdentifier = .invalid
     /// Sent with each search, so a reconnect joins it on the server rather than starting over.
     private var requestId = UUID().uuidString
     /// Set when the connection dropped: the search the server is still running for us.
@@ -127,16 +126,9 @@ final class FindModel: ObservableObject {
         let request = lastQuery
         let asked = clarifications
 
-        // Keep going for a while if the person switches apps mid-search.
-        endBackgroundTask(backgroundTask)
-        let background = UIApplication.shared.beginBackgroundTask(withName: "event-search") { [weak self] in
-            // UIKit only accepts endBackgroundTask on the main thread; never assume where this runs.
-            let end = { MainActor.assumeIsolated { if let self { self.endBackgroundTask(self.backgroundTask) } } }
-            if Thread.isMainThread { end() } else { DispatchQueue.main.sync(execute: end) }
-        }
-        backgroundTask = background
+        // No UIKit background task: ending one off the main thread crashed the app (Sentry DOORLIST-IOS-2),
+        // and iOS's background fetch (SearchFollowUp) now carries the search while the app is away.
         Task { @MainActor [weak self] in
-            defer { self?.endBackgroundTask(background) }
             guard let self else { return }
             do {
                 let outcome = try await EventSearch.run(request, clarifications: asked, requestId: id) { [weak self] stage in
@@ -162,12 +154,6 @@ final class FindModel: ObservableObject {
         }
     }
 
-    /// Ends the search's background time once, whether it finished or the system ran out.
-    private func endBackgroundTask(_ id: UIBackgroundTaskIdentifier) {
-        guard id != .invalid, id == backgroundTask else { return }
-        UIApplication.shared.endBackgroundTask(id)
-        backgroundTask = .invalid
-    }
 }
 
 /// "I want to go to…": searches the web for a fitting event and books it on
