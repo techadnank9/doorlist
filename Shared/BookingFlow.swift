@@ -62,7 +62,7 @@ final class BookingFlowModel: ObservableObject {
         phase = .loading
         do {
             let fetched = try await LumaClient(session: session).fetchEvent(reference)
-            let made = try await BookingPlanner.makePlan(fetched, reference: reference)
+            let made = try await BookingPlanner.makePlan(fetched, reference: reference, couponCode: PromoCode.find(in: input))
             plan = made
             original = made
             let toAsk = made.fields.filter(\.needsInput).map(\.id)

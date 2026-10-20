@@ -107,7 +107,9 @@ struct HomeView: View {
                 Image(systemName: "link")
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
-                TextField("Paste an event link", text: $link)
+                // Vertical, so a pasted "link + Free Code: X" keeps both lines.
+                TextField("Paste an event link", text: $link, axis: .vertical)
+                    .lineLimit(1...3)
                     .keyboardType(.URL)
                     .textContentType(.URL)
                     .textInputAutocapitalization(.never)
@@ -275,7 +277,11 @@ private struct EventRow: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 14) {
-                DateTile(date: record.startAt)
+                if let cover = record.coverUrl.flatMap(URL.init(string:)) {
+                    CoverTile(url: cover, date: record.startAt)
+                } else {
+                    DateTile(date: record.startAt)
+                }
                 VStack(alignment: .leading, spacing: 4) {
                     Text(record.eventName)
                         .font(.subheadline.weight(.semibold))
@@ -313,6 +319,25 @@ private struct EventRow: View {
         }
         .accessibilityElement(children: .combine)
         .accessibilityHint("Shows the questions and what was sent")
+    }
+}
+
+/// The event's cover, like Luma's lists; the date block shows while it loads or if it fails.
+private struct CoverTile: View {
+    let url: URL
+    let date: Date?
+
+    var body: some View {
+        AsyncImage(url: url) { phase in
+            if let image = phase.image {
+                image.resizable().scaledToFill()
+            } else {
+                DateTile(date: date)
+            }
+        }
+        .frame(width: 64, height: 64)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .accessibilityHidden(true)
     }
 }
 

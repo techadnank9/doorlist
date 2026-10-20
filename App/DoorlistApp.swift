@@ -104,6 +104,8 @@ final class AppState: ObservableObject {
 struct BookingRequest: Identifiable {
     let id = UUID()
     let input: String
+    /// A code pasted with the link ("Free Code: AICAMP"), applied at checkout.
+    var promoCode: String? { PromoCode.find(in: input) }
 }
 
 struct RootView: View {
@@ -140,7 +142,7 @@ struct RootView: View {
         }
         .sheet(item: $booking, onDismiss: { state.refresh() }) { request in
             if let link = EventLink.find(in: request.input, allowAnySite: true), link.platform != .luma {
-                WebBookingView(link: link) { booking = nil }
+                WebBookingView(link: link, promoCode: request.promoCode) { booking = nil }
                     .interactiveDismissDisabled()
             } else {
                 BookingSheet(request: request, showConnect: $showConnect, booking: $booking)

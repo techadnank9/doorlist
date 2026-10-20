@@ -76,3 +76,22 @@ struct EventLink: Hashable {
         return nil
     }
 }
+
+
+/// A promo, discount or access code pasted along with a link, like "Free Code: AICAMP".
+enum PromoCode {
+    static func find(in text: String) -> String? {
+        let pattern = #"(?i)\b(?:promo|discount|coupon|access|voucher|free|registration|ticket)?\s*code\s*[:=\-]?\s*([A-Z0-9][A-Z0-9_-]{2,31})\b"#
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return nil }
+        let ns = text as NSString
+        for match in regex.matches(in: text, range: NSRange(location: 0, length: ns.length)) {
+            let code = ns.substring(with: match.range(at: 1))
+            // Skip a word that just follows "code" in a sentence ("code of conduct"), and anything inside the link.
+            guard code.rangeOfCharacter(from: .decimalDigits) != nil || code == code.uppercased(),
+                  !["OF", "FOR", "IS", "THE"].contains(code.uppercased()) else { continue }
+            if let link = EventLink.find(in: text, allowAnySite: true), link.url.absoluteString.contains(code) { continue }
+            return code
+        }
+        return nil
+    }
+}

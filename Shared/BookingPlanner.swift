@@ -46,6 +46,7 @@ struct BookingPlan {
     var fields: [PlanField]
     let ticketTypeId: String?
     var inviteId: String? = nil
+    var couponCode: String? = nil
 
     var requiresApproval: Bool {
         page.ticketTypes?.first(where: { $0.apiId == ticketTypeId })?.requireApproval == true
@@ -70,7 +71,7 @@ enum PlanBlocker: LocalizedError {
 
 enum BookingPlanner {
 
-    static func makePlan(_ fetched: LumaClient.FetchedEvent, reference: String,
+    static func makePlan(_ fetched: LumaClient.FetchedEvent, reference: String, couponCode: String? = nil,
                          store: AnswerStore = .shared) async throws -> BookingPlan {
         let page = fetched.page
         // An invite isn't a spot yet: booking it is what accepts it.
@@ -80,7 +81,9 @@ enum BookingPlanner {
         if page.needsWallet { throw PlanBlocker.wallet }
 
         let types = page.ticketTypes ?? []
+        // With a code, a paid ticket may come out free; Luma says so if it doesn't.
         let ticket = types.first { $0.isSelectable && $0.isFree } ?? types.first { $0.isFree }
+            ?? (couponCode != nil ? types.first { $0.isSelectable } : nil)
         if !types.isEmpty && ticket == nil { throw PlanBlocker.paid }
 
         let saved = store.all()
@@ -185,7 +188,7 @@ enum BookingPlanner {
         }
 
         return BookingPlan(reference: reference, page: page, fields: fields, ticketTypeId: ticket?.apiId,
-                           inviteId: fetched.inviteId)
+                           inviteId: fetched.inviteId, couponCode: couponCode)
     }
 
     /// Typed key, then wording rules, then a saved question with the same or
@@ -288,7 +291,7 @@ enum BookingPlanner {
             eventApiId: plan.page.eventApiId, reference: plan.reference,
             name: name, firstName: first, lastName: last,
             email: value("email"), phoneNumber: phone,
-            ticketTypeId: plan.ticketTypeId, answers: answers, inviteId: plan.inviteId
+            ticketTypeId: plan.ticketTypeId, answers: answers, inviteId: plan.inviteId, couponCode: plan.couponCode
         )
     }
 

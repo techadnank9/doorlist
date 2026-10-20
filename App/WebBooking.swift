@@ -276,7 +276,16 @@ final class WebBookingModel: ObservableObject {
     /// (an event blurb saying "see you there"), so they don't count as success.
     private var baseline: Set<String>?
 
-    init(link: EventLink) { self.link = link }
+    /// Typed into the site's promo field, then applied, before the price is judged.
+    let promoCode: String?
+    /// The code is in the field; its Apply button is next.
+    private var promoNeedsApply = false
+    private var promoApplied = false
+
+    init(link: EventLink, promoCode: String? = nil) {
+        self.link = link
+        self.promoCode = promoCode
+    }
 
     var platform: EventPlatform { link.platform }
 
@@ -333,6 +342,9 @@ final class WebBookingModel: ObservableObject {
         default: break
         }
 
+        // A code can make a paid ticket free, so it goes in before the price is checked.
+        if await applyPromo(scan) { return }
+
         if Self.looksPaid(lower) || scan.paymentFrame {
             phase = .paid
             return
@@ -348,6 +360,50 @@ final class WebBookingModel: ObservableObject {
             return
         }
         await pressNext(scan)
+    }
+
+    static func isPromoField(_ label: String) -> Bool {
+        let l = norm(label)
+        return ["promo", "discount", "coupon", "voucher", "access code", "promotional", "redeem", "registration code"]
+            .contains { l.contains($0) }
+    }
+
+    /// Fills the promo field, then taps its Apply button. True while that's in progress.
+    private func applyPromo(_ scan: PageScan) async -> Bool {
+        guard let code = promoCode, !promoApplied else { return false }
+        if !promoNeedsApply {
+            guard let field = scan.fields.first(where: { Self.isPromoField($0.label) && $0.type != "checkbox" }) else {
+                // Some checkouts hide the field behind "Have a promo code?"; open it once.
+                if let reveal = scan.buttons.first(where: { b in
+                    let t = Self.norm(b.text)
+                    return Self.isPromoField(t) && (clicks[t] ?? 0) == 0 && !t.hasPrefix("remove")
+                }) {
+                    clicks[Self.norm(reveal.text), default: 0] += 1
+                    phase = .working("Opening the promo code field")
+                    _ = try? await webView?.evaluateJavaScript("window.__doorlist.click(\(Self.jsString(reveal.id)))")
+                    return true
+                }
+                return false
+            }
+            if field.value.trimmingCharacters(in: .whitespaces).caseInsensitiveCompare(code) != .orderedSame {
+                await fill(field, code, label: field.label)
+            }
+            handled[field.id] = code
+            promoNeedsApply = true
+            phase = .working("Entered code \(code)")
+            return true
+        }
+        promoNeedsApply = false
+        promoApplied = true
+        let applyWords: Set<String> = ["apply", "apply code", "apply promo code", "apply coupon", "apply discount",
+                                       "redeem", "redeem code", "use code", "submit code", "validate"]
+        if let apply = scan.buttons.first(where: { applyWords.contains(Self.norm($0.text)) }) {
+            phase = .working("Applying code \(code)")
+            _ = try? await webView?.evaluateJavaScript("window.__doorlist.click(\(Self.jsString(apply.id)))")
+            lastClick = Date()
+            return true
+        }
+        return false
     }
 
     private func fillKnown(_ scan: PageScan) async {
@@ -378,6 +434,8 @@ final class WebBookingModel: ObservableObject {
                 }
                 continue
             }
+
+            if Self.isPromoField(field.label) { continue }
 
             let key = Self.key(for: field, saved: saved)
             var value = Self.value(for: key, saved: saved)
@@ -640,8 +698,8 @@ struct WebBookingView: View {
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    init(link: EventLink, onClose: @escaping () -> Void) {
-        _model = StateObject(wrappedValue: WebBookingModel(link: link))
+    init(link: EventLink, promoCode: String? = nil, onClose: @escaping () -> Void) {
+        _model = StateObject(wrappedValue: WebBookingModel(link: link, promoCode: promoCode))
         self.onClose = onClose
     }
 

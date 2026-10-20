@@ -112,6 +112,7 @@ struct LumaClient {
         var ticketTypeId: String?
         var answers: [[String: Any]]
         var inviteId: String?
+        var couponCode: String?
     }
 
     /// Mirrors the payload luma.com builds in its registration form. Joins the
@@ -138,7 +139,7 @@ struct LumaClient {
             "payment_method": null,
             "payment_currency": null,
             "registration_answers": r.answers,
-            "coupon_code": null,
+            "coupon_code": r.couponCode ?? null,
             "token_gate_info": null,
             "eth_address_info": null,
             "phone_number": r.phoneNumber,
