@@ -278,6 +278,8 @@ final class WebBookingModel: ObservableObject {
     @Published var progress = 0.0
     @Published private(set) var eventTitle: String?
     @Published private(set) var filledCount = 0
+    /// A robot check is on the page, waiting for the person.
+    @Published private(set) var needsRobotCheck = false
 
     weak var webView: WKWebView?
     private var loop: Task<Void, Never>?
@@ -361,8 +363,9 @@ final class WebBookingModel: ObservableObject {
         default: break
         }
 
-        // Doorlist never tries to get past a robot check.
-        if scan.captcha == true {
+        // Doorlist never tries to get past a robot check; it waits, then carries on by itself.
+        needsRobotCheck = scan.captcha == true
+        if needsRobotCheck {
             phase = .needsYou("Finish the \u{201C}I'm not a robot\u{201D} check")
             return
         }
@@ -387,6 +390,42 @@ final class WebBookingModel: ObservableObject {
         }
         await pressNext(scan)
     }
+
+    // MARK: Fill on request
+
+    /// The person is steering and taps Fill this page: every field Doorlist has an answer for goes in,
+    /// and on a sign in form the login Doorlist made for the site. Nothing is tapped or sent.
+    func fillNow() async {
+        guard !ticking, let webView else { return }
+        ticking = true
+        defer { ticking = false }
+        _ = try? await webView.evaluateJavaScript(pageScript)
+        guard let raw = try? await webView.evaluateJavaScript("window.__doorlist.scan()") as? String,
+              let data = raw.data(using: .utf8),
+              let scan = try? JSONDecoder().decode(PageScan.self, from: data) else { return }
+        // Fields the person cleared on purpose get another go.
+        handled = [:]
+        let before = filledCount
+        if let boxes = scan.passwords, let login = SiteLogins.login(for: webView.url?.host) {
+            for box in boxes where !box.filled { await fillSecret(box.id, login.password) }
+            if let emailField = scan.fields.first(where: { $0.type == "email" || $0.autocomplete.contains("email") || $0.autocomplete == "username" }),
+               emailField.value.trimmingCharacters(in: .whitespaces).isEmpty {
+                await fill(emailField, login.email, label: emailField.label)
+            }
+        }
+        if let code = promoCode, let promo = scan.fields.first(where: { Self.isPromoField($0.label) }),
+           promo.value.trimmingCharacters(in: .whitespaces).isEmpty {
+            await fill(promo, code, label: promo.label)
+        }
+        await fillKnown(scan)
+        let count = filledCount - before
+        let note = count == 0 ? "Nothing here Doorlist has an answer for yet"
+            : "Filled \(count) field\(count == 1 ? "" : "s"). Check them, then tap the page's button."
+        if case .paused = phase { pausedNote = note } else { phase = .needsYou(note) }
+    }
+
+    /// What Fill this page did, shown while the person is steering.
+    @Published private(set) var pausedNote: String?
 
     // MARK: Accounts
 
@@ -838,9 +877,14 @@ struct WebBookingView: View {
         .onDisappear { model.stop() }
         .onChange(of: scenePhase) { _, phase in
             if phase == .background { notifyFirstAsk() }
+            if phase == .background, model.needsRobotCheck { Notifier.robotCheck(event: model.eventTitle) }
             if phase == .active { Notifier.clearQuestion() }
         }
         .onChange(of: model.asks) { _, _ in if scenePhase != .active { notifyFirstAsk() } }
+        .onChange(of: model.needsRobotCheck) { _, waiting in
+            if waiting, scenePhase != .active { Notifier.robotCheck(event: model.eventTitle) }
+            if !waiting { Notifier.clearRobotCheck() }
+        }
         .onReceive(NotificationCenter.default.publisher(for: AnswerInbox.name)) { note in
             guard let (token, text) = AnswerInbox.read(note), let ask = model.asks.first(where: { $0.id == token }) else { return }
             var value = text
@@ -864,18 +908,36 @@ struct WebBookingView: View {
         case .working(let t): ("sparkles", .accentColor, t)
         case .needsYou(let t): ("hand.point.up.left.fill", .orange, t)
         case .paid: ("creditcard.fill", .orange, "This one costs money. Check it and pay on the page yourself.")
-        case .paused: ("pause.circle.fill", .secondary, "You're driving. Doorlist is watching for the confirmation.")
+        case .paused: ("pause.circle.fill", .secondary, model.pausedNote ?? "You're driving. Doorlist is watching for the confirmation.")
         case .done: ("checkmark.circle.fill", .green, "Done")
         }
-        return Label {
-            Text(text).font(.footnote.weight(.medium)).foregroundStyle(.primary)
-        } icon: {
-            Image(systemName: symbol).foregroundStyle(tint)
+        let steering: Bool = switch model.phase {
+        case .paused, .needsYou, .paid: true
+        default: false
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        return HStack(spacing: 10) {
+            Label {
+                Text(text).font(.footnote.weight(.medium)).foregroundStyle(.primary)
+            } icon: {
+                Image(systemName: symbol).foregroundStyle(tint)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityElement(children: .combine)
+            if steering {
+                // The person is on the page: one tap puts in everything Doorlist knows.
+                Button {
+                    Task { await model.fillNow() }
+                } label: {
+                    Label("Fill this page", systemImage: "wand.and.sparkles")
+                        .font(.footnote.weight(.semibold))
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .accessibilityHint("Fills every field Doorlist has an answer for. Nothing is sent.")
+            }
+        }
         .padding(.horizontal, 16).padding(.vertical, 10)
         .background(Color(.secondarySystemBackground))
-        .accessibilityElement(children: .combine)
     }
 
     private func askPanel(_ ask: WebAsk) -> some View {
@@ -982,7 +1044,10 @@ private struct EventPageWebView: UIViewRepresentable {
     func makeUIView(context: Context) -> WKWebView {
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
-        config.applicationNameForUserAgent = "Version/18.0 Mobile/15E148 Safari/604.1"
+        // Safari's own wording, with this phone's real iOS version: a mismatched one looks off to sites
+        // and brings more robot checks.
+        let major = UIDevice.current.systemVersion.split(separator: ".").first ?? "26"
+        config.applicationNameForUserAgent = "Version/\(major).0 Mobile/15E148 Safari/604.1"
         let view = WKWebView(frame: .zero, configuration: config)
         view.allowsBackForwardNavigationGestures = true
         view.uiDelegate = context.coordinator

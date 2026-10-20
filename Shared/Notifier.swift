@@ -36,6 +36,20 @@ enum Notifier {
         UNUserNotificationCenter.current().add(request)
     }
 
+    /// Booking reached a robot check while the app was away. Tapping opens the app on it.
+    static func robotCheck(event: String?) {
+        let content = UNMutableNotificationContent()
+        content.title = "Tap to finish the robot check"
+        content.body = event.map { "Then Doorlist finishes booking \($0)." } ?? "Then Doorlist finishes the booking."
+        content.sound = .default
+        let request = UNNotificationRequest(identifier: "doorlist-robot-check", content: content, trigger: nil)
+        UNUserNotificationCenter.current().add(request)
+    }
+
+    static func clearRobotCheck() {
+        UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["doorlist-robot-check"])
+    }
+
     static func clearQuestion() {
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ["doorlist-question"])
     }
