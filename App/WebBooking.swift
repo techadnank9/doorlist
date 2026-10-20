@@ -67,11 +67,12 @@ private let pageScript = #"""
   };
 
   D.scan = () => {
-    const fields = [], buttons = [], groups = {};
-    let secretField = false, paymentFrame = false;
+    const fields = [], buttons = [], groups = {}, passwords = [];
+    let secretField = false, paymentFrame = false, captcha = false;
     for (const d of docs()) {
       for (const f of d.querySelectorAll('iframe')) {
         if (/stripe|braintree|adyen|paypal|checkout\.com|recurly/i.test(f.src || '')) paymentFrame = true;
+        if (/recaptcha|hcaptcha|challenges\.cloudflare|turnstile|arkoselabs|funcaptcha/i.test(f.src || '') && visible(f)) captcha = true;
       }
       for (const el of d.querySelectorAll('input, textarea, select')) {
         const type = (el.type || el.tagName).toLowerCase();
@@ -83,6 +84,14 @@ private let pageScript = #"""
           const holder = el.closest('label') || (el.id && el.ownerDocument.querySelector('label[for="' + CSS.escape(el.id) + '"]')) || el.parentElement;
           if (!visible(el) && !(holder && visible(holder))) continue;
         } else if (!visible(el)) continue;
+        if (type === 'password') {
+          // Sign in or a new account: the site's own hints, then the wording around the field.
+          const hint = (labelFor(el) + ' ' + (el.name || '') + ' ' + (el.id || '')).toLowerCase();
+          const ac = (el.getAttribute('autocomplete') || '').toLowerCase();
+          passwords.push({ id: tag(el), filled: !!el.value,
+            isNew: ac === 'new-password' || /confirm|create|choose|new|re-?enter|repeat|again|verify/.test(hint) });
+          continue;
+        }
         if (isSecret(el)) { if (visible(el)) secretField = true; continue; }
         const required = el.required || el.getAttribute('aria-required') === 'true' ||
           /\*\s*$|\(required\)/i.test(labelFor(el));
@@ -149,7 +158,9 @@ private let pageScript = #"""
     }
     const body = docs().map(d => d.body ? d.body.innerText : '').join('\n');
     return JSON.stringify({
-      fields, buttons, secretField, paymentFrame,
+      fields, buttons, secretField, paymentFrame, captcha,
+      // Two password boxes on one form is a sign up even when neither says so.
+      passwords: passwords.length > 1 ? passwords.map(p => ({ ...p, isNew: true })) : passwords,
       text: body.slice(0, 20000),
       title: meta('og:title') || document.title, image: meta('og:image'), start, place,
     });
@@ -220,10 +231,18 @@ struct PageScan: Decodable {
         let text: String
         let isLink: Bool?
     }
+    struct Password: Decodable {
+        let id: String
+        let filled: Bool
+        /// A new account's password (or its confirmation), not a sign in.
+        let isNew: Bool
+    }
     let fields: [Field]
     let buttons: [Button]
     let secretField: Bool
     let paymentFrame: Bool
+    var captcha: Bool? = nil
+    var passwords: [Password]? = nil
     let text: String
     let title: String?
     let image: String?
@@ -342,6 +361,13 @@ final class WebBookingModel: ObservableObject {
         default: break
         }
 
+        // Doorlist never tries to get past a robot check.
+        if scan.captcha == true {
+            phase = .needsYou("Finish the \u{201C}I'm not a robot\u{201D} check")
+            return
+        }
+        if await handleAccount(scan) { return }
+
         // A code can make a paid ticket free, so it goes in before the price is checked.
         if await applyPromo(scan) { return }
 
@@ -360,6 +386,82 @@ final class WebBookingModel: ObservableObject {
             return
         }
         await pressNext(scan)
+    }
+
+    // MARK: Accounts
+
+    /// Buttons that send a sign in or sign up form; only tapped while a password box is on the page,
+    /// so a "Sign up" link in a site's header is never followed.
+    private static let authWords: Set<String> = ["sign in", "log in", "login", "signin", "create account",
+                                                  "create an account", "create my account", "sign up", "signup",
+                                                  "register", "continue", "next", "submit", "join"]
+
+    /// Signs in with the login Doorlist made for this site, or makes one on a sign up form with the
+    /// person's saved name and email and a new random password kept in the Keychain. A sign in form
+    /// for a site Doorlist has no login for waits for the person. True while that's happening.
+    private func handleAccount(_ scan: PageScan) async -> Bool {
+        guard let boxes = scan.passwords, !boxes.isEmpty,
+              let site = SiteLogins.site(for: webView?.url?.host) else { return false }
+        let empty = boxes.filter { !$0.filled && handled[$0.id] == nil }
+        guard !empty.isEmpty else { return await submitAccount(scan) }
+        let creating = boxes.contains(where: \.isNew)
+        var login = SiteLogins.login(for: site)
+        if login == nil {
+            guard creating else {
+                // A sign in form and no account yet: open the site's own sign up, once.
+                let signUpWords: Set<String> = ["sign up", "signup", "create account", "create an account",
+                                                "register", "create one", "join now", "get started", "new user? sign up",
+                                                "don't have an account? sign up", "no account? create one"]
+                if let link = scan.buttons.first(where: { b in
+                    let t = Self.norm(b.text)
+                    return (signUpWords.contains(t) || t.hasSuffix(" sign up") || t.hasSuffix(" create one")) && (clicks[t] ?? 0) == 0
+                }) {
+                    clicks[Self.norm(link.text), default: 0] += 1
+                    lastClick = Date()
+                    phase = .working("Making a \(site) account")
+                    _ = try? await webView?.evaluateJavaScript("window.__doorlist.click(\(Self.jsString(link.id)))")
+                    return true
+                }
+                phase = .needsYou("Sign in to \(site) once. Doorlist stays signed in after.")
+                return true
+            }
+            guard let email = AnswerStore.shared.all()["email"]?.value, !email.isEmpty else {
+                phase = .needsYou("Add your email in Answers so Doorlist can make your \(site) account")
+                return true
+            }
+            let made = SiteLogin(site: site, email: email, password: SiteLogins.newPassword(), createdAt: Date())
+            SiteLogins.save(made)
+            sent["account"] = SentAnswer(question: "Account", answer: "Made a \(site) account for \(email). The password is in Other event sites.")
+            login = made
+        }
+        for box in empty { await fillSecret(box.id, login!.password) }
+        // The email box: the login's own address, in case it differs from the saved answer.
+        if let emailField = scan.fields.first(where: { $0.type == "email" || $0.autocomplete.contains("email") || $0.autocomplete == "username" }),
+           emailField.value.trimmingCharacters(in: .whitespaces).isEmpty {
+            await fill(emailField, login!.email, label: emailField.label)
+        }
+        phase = .working(creating ? "Making your \(site) account" : "Signing in to \(site)")
+        return true
+    }
+
+    /// Everything on the sign in or sign up form is filled: send it.
+    private func submitAccount(_ scan: PageScan) async -> Bool {
+        await fillKnown(scan)
+        guard asks.isEmpty, !scan.secretField, Date().timeIntervalSince(lastClick) > 2.2 else { return !asks.isEmpty }
+        guard let button = scan.buttons.first(where: { b in
+            b.isLink != true && Self.authWords.contains(Self.norm(b.text)) && (clicks[Self.norm(b.text)] ?? 0) < 2
+        }) else { return false }
+        clicks[Self.norm(button.text), default: 0] += 1
+        lastClick = Date()
+        phase = .working("Tapping \(button.text)")
+        _ = try? await webView?.evaluateJavaScript("window.__doorlist.click(\(Self.jsString(button.id)))")
+        return true
+    }
+
+    /// A password goes in without being shown anywhere or added to the answers sent.
+    private func fillSecret(_ id: String, _ value: String) async {
+        handled[id] = "password"
+        _ = try? await webView?.evaluateJavaScript("window.__doorlist.fill(\(Self.jsString(id)), \(Self.jsString(value)))")
     }
 
     static func isPromoField(_ label: String) -> Bool {

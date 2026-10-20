@@ -45,6 +45,8 @@ struct ConnectedSitesView: View {
     /// Ids of the sites marked connected, re-read whenever that may have changed.
     @State private var connected: Set<String> = []
     @State private var disconnecting: ConnectedSite?
+    @State private var logins: [SiteLogin] = []
+    @State private var openLogin: SiteLogin?
 
     var body: some View {
         List {
@@ -76,6 +78,26 @@ struct ConnectedSitesView: View {
             } footer: {
                 Text("Sign in once on the site's own page and bookings there start signed in. Logins stay on this phone and never sync. Tap a connected site to disconnect it.")
             }
+
+            if !logins.isEmpty {
+                Section {
+                    ForEach(logins) { login in
+                        Button { openLogin = login } label: {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(login.site).foregroundStyle(.primary)
+                                Text(login.email).font(.subheadline).foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .accessibilityHint("Copy its password, or forget it")
+                    }
+                } header: {
+                    Text("Accounts Doorlist made")
+                } footer: {
+                    Text("Made while booking, with your saved email and a strong random password. Kept in this phone's Keychain only.")
+                }
+            }
         }
         .scrollContentBackground(.hidden)
         .background(Color.canvas)
@@ -93,11 +115,24 @@ struct ConnectedSitesView: View {
         } message: { site in
             Text("Signs Doorlist out of \(site.name) on this phone. Bookings there will ask you to sign in again.")
         }
+        .confirmationDialog(openLogin.map { "\($0.site) · \($0.email)" } ?? "",
+                            isPresented: Binding(get: { openLogin != nil }, set: { if !$0 { openLogin = nil } }),
+                            titleVisibility: .visible, presenting: openLogin) { login in
+            Button("Copy password") { UIPasteboard.general.string = login.password }
+            Button("Copy email") { UIPasteboard.general.string = login.email }
+            Button("Forget this login", role: .destructive) {
+                SiteLogins.remove(site: login.site)
+                logins = SiteLogins.all()
+            }
+        } message: { _ in
+            Text("Forgetting it only removes it from Doorlist. The account stays on the site.")
+        }
         .onAppear(perform: reloadConnected)
     }
 
     private func reloadConnected() {
         connected = Set(ConnectedSite.all.filter(\.isConnected).map(\.id))
+        logins = SiteLogins.all()
     }
 }
 
