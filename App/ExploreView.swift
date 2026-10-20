@@ -113,14 +113,13 @@ final class ExploreModel: ObservableObject {
 
     init() {
         let defaults = UserDefaults.standard
-        // The whole Bay Area by default, like Luma's Nearby: plenty of SF tech events are in Palo Alto or Mountain View.
-        place = defaults.string(forKey: "explorePlace") ?? "bay-area"
+        place = defaults.string(forKey: "explorePlace") ?? "sf"
         topic = defaults.string(forKey: "exploreTopic")
         source = defaults.string(forKey: "exploreSource")
     }
 
     var placeName: String {
-        place == Self.nearMe ? "Near me" : places.first { $0.id == place }?.name ?? "Bay Area"
+        place == Self.nearMe ? "Near me" : places.first { $0.id == place }?.name ?? "San Francisco"
     }
 
     func start() async {
@@ -158,7 +157,7 @@ final class ExploreModel: ObservableObject {
         if place == Self.nearMe, let here = await LocationProvider.shared.current(), here.latitude != 0 {
             items += [URLQueryItem(name: "lat", value: String(here.latitude)), URLQueryItem(name: "lng", value: String(here.longitude))]
         } else {
-            items.append(URLQueryItem(name: "place", value: place == Self.nearMe ? "bay-area" : place))
+            items.append(URLQueryItem(name: "place", value: place == Self.nearMe ? "sf" : place))
         }
         if let topic { items.append(URLQueryItem(name: "topic", value: topic)) }
         if let source { items.append(URLQueryItem(name: "source", value: source)) }

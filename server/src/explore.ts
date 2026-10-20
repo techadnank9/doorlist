@@ -82,15 +82,19 @@ export function mountExplore(app: Hono) {
     const add = (value: unknown) => (params.push(value), `$${params.length}`);
     // Not over yet: still running, or starting later. Events without an end count as three hours long.
     const clauses = ["coalesce(ends_at, starts_at + interval '3 hours') > now()"];
+    // Within each day, the place itself first (San Francisco), then close by (Palo Alto, Oakland), then
+    // further out (San Jose), each by start time, the way Luma's city pages read.
+    let band = "";
     if (where === "online") {
       clauses.push("online");
     } else {
       const lat = add(where.lat), lng = add(where.lng), km = add(where.radiusKm);
+      const distance = `6371 * acos(least(1, cos(radians(${lat})) * cos(radians(lat)) * cos(radians(lng) - radians(${lng}))
+           + sin(radians(${lat})) * sin(radians(lat))))`;
       clauses.push("NOT online", "lat IS NOT NULL",
         // A cheap box first (uses the lat index), then the true distance.
-        `lat BETWEEN ${lat} - ${km} / 111.0 AND ${lat} + ${km} / 111.0`,
-        `6371 * acos(least(1, cos(radians(${lat})) * cos(radians(lat)) * cos(radians(lng) - radians(${lng}))
-           + sin(radians(${lat})) * sin(radians(lat)))) <= ${km}`);
+        `lat BETWEEN ${lat} - ${km} / 111.0 AND ${lat} + ${km} / 111.0`, `${distance} <= ${km}`);
+      band = `CASE WHEN ${distance} <= 15 THEN 0 WHEN ${distance} <= 50 THEN 1 ELSE 2 END, `;
     }
     if (topic) clauses.push(`topics @> ARRAY[${add(topic)}]::text[]`);
     if (source) clauses.push(`sources @> ARRAY[${add(source)}]::text[]`);
@@ -100,7 +104,8 @@ export function mountExplore(app: Hono) {
               is_free, sold_out, guest_count, topics, left(description, 1200) AS description
          FROM explore_events WHERE ${clauses.join(" AND ")}
          -- Running now sorts as now, so a month-long online hackathon doesn't sit above tonight's events forever.
-         ORDER BY greatest(starts_at, now()), guest_count DESC NULLS LAST, id
+         ORDER BY (greatest(starts_at, now()) AT TIME ZONE coalesce(timezone, 'UTC'))::date, ${band}
+                  greatest(starts_at, now()), guest_count DESC NULLS LAST, id
          LIMIT ${PAGE + 1} OFFSET ${add(offset)}`,
       params,
     );

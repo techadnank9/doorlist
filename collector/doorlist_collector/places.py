@@ -31,7 +31,8 @@ class Place:
 LUMA_SLUG_IDS = {"la": "los-angeles", "nyc": "new-york", "dc": "washington-dc", "sd": "san-diego"}
 
 FEATURED: list[Place] = [
-    Place("sf", "San Francisco", 37.7749, -122.4194, 20, featured=1,
+    # Like Luma's San Francisco: the city first, but reaching Palo Alto, San Jose and the East Bay.
+    Place("sf", "San Francisco", 37.7749, -122.4194, 80, featured=1,
           eventbrite="ca--san-francisco", meetup="us--ca--San Francisco", allevents="san francisco",
           partiful="sf", funcheap="https://sf.funcheap.com/feed/"),
     # Luma has no Bay Area; this circle reaches Santa Rosa, Sacramento's edge, Santa Cruz and San Jose.
