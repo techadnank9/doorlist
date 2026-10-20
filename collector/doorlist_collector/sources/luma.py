@@ -23,6 +23,9 @@ API = "https://api.luma.com"
 # new event, from Luma's own categories when it's read once.
 DISCOVER_CATEGORIES = {"tech": "cat-tech", "ai": "cat-ai", "food": "cat-fooddrink"}
 
+# Pages of 50 read per category in each featured city.
+CATEGORY_PAGES = 3
+
 # Cities other than the featured ones are read every this many runs (hourly runs: every 6 hours).
 ROTATION = 6
 
@@ -158,8 +161,9 @@ def collect(http: Polite, places: list[Place], run_number: int, known: set[str],
             if place.featured:
                 # Luma ignores the category when a city id is given, so categories go by coordinates.
                 for topic, category in DISCOVER_CATEGORIES.items():
-                    add(_discover(http, f"discover_category_api_id={category}&latitude={place.lat}&longitude={place.lng}"),
-                        LUMA_CATEGORY_TOPICS[topic])
+                    # Busy categories (AI in San Francisco) run well past one page of 50.
+                    add(_discover(http, f"discover_category_api_id={category}&latitude={place.lat}&longitude={place.lng}",
+                                  pages=CATEGORY_PAGES), LUMA_CATEGORY_TOPICS[topic])
         except Blocked:
             notes["blocked"] = place.id
             break

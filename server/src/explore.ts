@@ -22,7 +22,8 @@ const topicIds = new Set<string>(TOPICS.map(([id]) => id));
 const sourceIds = new Set<string>(SOURCES.map(([id]) => id));
 
 const PAGE = 30;
-const NEAR_ME_KM = 40;
+// About what Luma counts as "Nearby": from San Francisco it reaches Palo Alto and Walnut Creek.
+const NEAR_ME_KM = 60;
 
 /** A smaller copy of the cover where the image host can make one. Luma's covers are often 2 MB PNGs. */
 export function thumbnail(url: string | null, size = 400): string | null {
