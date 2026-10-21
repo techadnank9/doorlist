@@ -25,6 +25,11 @@ const events = {
   "winter-gala": { title: "Winter Gala", start: at(9, 20), price: 45, place: "The Palace, San Francisco" },
 };
 
+// MARK: Fake ElevenLabs token
+
+mock.post("/elevenlabs/single-use-token/realtime_scribe", (c) =>
+  c.req.header("xi-api-key") ? c.json({ token: "sutkn_test" }) : c.json({ detail: "no key" }, 401));
+
 // MARK: Fake OpenAI
 
 mock.post("/openai/responses", async (c) => {

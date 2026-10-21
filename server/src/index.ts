@@ -14,7 +14,7 @@ import { findJob, follow, jobKey, startJob } from "./searchJobs.js";
 import { search, SearchError, type SearchInput } from "./search.js";
 import { clean, remove, sync } from "./sync.js";
 import { draft, parseDraft, parseReply, reply } from "./draft.js";
-import { transcribe } from "./transcribe.js";
+import { realtimeURL, transcribe } from "./transcribe.js";
 
 export const app = new Hono();
 if (process.env.NODE_ENV !== "test") app.use(logger());
@@ -137,6 +137,20 @@ app.post("/v1/reply", async (c) => {
     const message = error instanceof SearchError ? error.message : "Writing help hit a snag. Try again.";
     if (sentryOn && !(error instanceof SearchError)) Sentry.captureException(error);
     return c.json({ error: message }, 502);
+  }
+});
+
+// Live dictation: where the phone streams its microphone, with a single use ElevenLabs token.
+app.post("/v1/voice/session", async (c) => {
+  const who = caller(c);
+  if (!who) return c.json({ error: "Missing install id." }, 400);
+  if (!config.elevenLabsKey) return c.json({ error: "Voice isn't set up on this server." }, 503);
+  if (!take(who, "transcribe", config.transcribeLimit)) return c.json({ error: "Voice limit reached for today." }, 429);
+  try {
+    return c.json({ url: await realtimeURL() });
+  } catch (error) {
+    if (sentryOn) Sentry.captureException(error);
+    return c.json({ error: "Can't reach voice right now. Try again." }, 502);
   }
 });
 

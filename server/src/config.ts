@@ -13,5 +13,6 @@ export const config = {
   openAIBase: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",
   exaBase: process.env.EXA_BASE_URL || "https://api.exa.ai",
   elevenLabsBase: process.env.ELEVENLABS_BASE_URL || "https://api.elevenlabs.io/v1",
+  elevenLabsRealtimeBase: process.env.ELEVENLABS_REALTIME_URL || "wss://api.elevenlabs.io",
   lumaBase: process.env.LUMA_BASE_URL || "https://api.luma.com",
 };

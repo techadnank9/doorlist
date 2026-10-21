@@ -256,6 +256,19 @@ describe("POST /v1/reply", () => {
   });
 });
 
+describe("POST /v1/voice/session", () => {
+  test("hands out a Scribe v2 Realtime socket with a single use token, never the key", async () => {
+    const res = await app.request("/v1/voice/session", { method: "POST", headers: headers("install-voice") });
+    assert.equal(res.status, 200);
+    const url = new URL(((await res.json()) as any).url);
+    assert.equal(url.pathname, "/v1/speech-to-text/realtime");
+    assert.equal(url.searchParams.get("model_id"), "scribe_v2_realtime");
+    assert.equal(url.searchParams.get("audio_format"), "pcm_16000");
+    assert.equal(url.searchParams.get("token"), "sutkn_test");
+    assert.ok(!url.toString().includes("xi-api-key"));
+  });
+});
+
 describe("POST /v1/transcribe", () => {
   test("turns a recording into text through ElevenLabs", async () => {
     const audio = new Uint8Array(8000).fill(7);
