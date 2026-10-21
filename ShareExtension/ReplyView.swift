@@ -2,7 +2,9 @@ import SwiftUI
 import UIKit
 
 /// A screenshot shared to Doorlist: the reply is written from the person's saved answers and copied the
-/// moment it's ready. A hint below ("say I'm free tomorrow at 3") rewrites it, and that's copied too.
+/// moment it's ready. The box on top is optional: skip it and the first reply stands; type or say something
+/// ("say I'm free tomorrow at 3"), even while the first is still being written, and it's written again with
+/// that, and copied too.
 struct ReplyView: View {
     let image: UIImage
     let onClose: () -> Void
@@ -14,6 +16,8 @@ struct ReplyView: View {
     @State private var copiedText: String?
     @State private var error: String?
     @FocusState private var hintFocused: Bool
+    /// The reply being written; a new request with the person's words replaces it.
+    @State private var job: Task<Void, Never>?
 
     private var copied: Bool { !reply.isEmpty && reply == copiedText }
 
@@ -21,8 +25,8 @@ struct ReplyView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    answerCard
                     hintBox
+                    answerCard
                 }
                 .padding(Theme.gutter)
             }
@@ -44,7 +48,8 @@ struct ReplyView: View {
                 .background(.bar)
             }
         }
-        .task { await write() }
+        .onAppear { start() }
+        .onDisappear { job?.cancel() }
     }
 
     private var answerCard: some View {
@@ -72,13 +77,14 @@ struct ReplyView: View {
 
     private var hintBox: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Change it").font(.headline)
+            Text("Anything to add?").font(.headline)
+            + Text("  Optional").font(.subheadline).foregroundStyle(.secondary)
             HStack(alignment: .top, spacing: 8) {
                 TextField("e.g. say I'm free tomorrow at 3, keep it short", text: $hint, axis: .vertical)
                     .lineLimit(1...4)
                     .focused($hintFocused)
                     .submitLabel(.send)
-                    .onSubmit { Task { await write() } }
+                    .onSubmit { start() }
                     .padding(.vertical, 12)
                 MicButton(context: "Instructions for a reply") { spoken in
                     hint = hint.isEmpty ? spoken : hint + " " + spoken
@@ -88,27 +94,33 @@ struct ReplyView: View {
             .padding(.leading, 12).padding(.trailing, 4)
             .background(Color.fill, in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
             Button {
-                Task { await write() }
+                start()
             } label: {
-                Label(hint.trimmingCharacters(in: .whitespaces).isEmpty ? "Write another" : "Rewrite with this",
+                Label(hint.trimmingCharacters(in: .whitespaces).isEmpty ? "Write another" : "Write it with this",
                       systemImage: "arrow.triangle.2.circlepath")
             }
             .buttonStyle(.secondary)
-            .disabled(working)
         }
     }
 
-    private func write() async {
+    /// Writes (or rewrites) the reply, replacing one still in flight, so the person's words always win.
+    private func start() {
+        job?.cancel()
         hintFocused = false
         working = true
         error = nil
-        defer { working = false }
-        do {
-            let text = try await AIDraft.reply(to: image, hint: hint, previous: reply.isEmpty ? nil : reply)
-            reply = text
-            copy()
-        } catch {
-            self.error = error.localizedDescription
+        let hint = hint, previous = reply.isEmpty ? nil : reply
+        job = Task {
+            do {
+                let text = try await AIDraft.reply(to: image, hint: hint, previous: previous)
+                guard !Task.isCancelled else { return }
+                reply = text
+                copy()
+            } catch {
+                guard !Task.isCancelled else { return }
+                self.error = error.localizedDescription
+            }
+            working = false
         }
     }
 
