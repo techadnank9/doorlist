@@ -1,16 +1,17 @@
 import SwiftUI
 import AVFoundation
-import Speech
 
-/// Speak an answer instead of typing it. Records on the phone, then Doorlist's
-/// server turns it into text with ElevenLabs Scribe; if the server can't, Apple's
-/// speech recognition does it on the device.
+/// Speak an answer instead of typing it, and watch it appear as you talk. The microphone streams straight to
+/// ElevenLabs Scribe v2 Realtime (about 150 ms behind your voice); Doorlist's server only hands out a single use
+/// token for each session, so the API key never reaches the phone. There's no on-device fallback: if ElevenLabs
+/// can't be reached, the button says so.
 @MainActor
 final class VoiceInput: ObservableObject {
     enum State: Equatable {
         case idle
         case recording
-        case transcribing
+        /// Stopped talking; the last words are settling.
+        case finishing
         case failed(String)
     }
 
@@ -18,37 +19,50 @@ final class VoiceInput: ObservableObject {
     /// 0...1, for the live level ring.
     @Published private(set) var level: Double = 0
 
-    private var recorder: AVAudioRecorder?
-    private var meter: Timer?
-    private var seconds: Double = 0
-    /// The current recording's file, a fresh name each time so an old transcription can't read a new one.
-    private var fileURL: URL?
-    private var transcription: Task<Void, Never>?
+    private let engine = AVAudioEngine()
+    private var socket: URLSessionWebSocketTask?
+    /// Audio captured before the socket opened, sent the moment it does, so the first words aren't lost.
+    private var pending: [Data] = []
+    private var sentFirst = false
+    private var committed = ""
+    private var partial = ""
+    private var onLive: ((String) -> Void)?
+    private var onText: ((String) -> Void)?
+    private var session: Task<Void, Never>?
+    private var settle: CheckedContinuation<Void, Never>?
     /// Set while the permission prompt is up, so a second tap doesn't start twice.
     private var starting = false
 
-    /// Press once to start, again to stop; the text arrives in `onText`.
-    func toggle(context: String?, onText: @escaping (String) -> Void) {
+    private var transcript: String { [committed, partial].filter { !$0.isEmpty }.joined(separator: " ") }
+
+    /// Tap once to start, again to stop. `onLive` gets the words so far as they arrive; `onText` the final text.
+    func toggle(context: String?, onLive: ((String) -> Void)? = nil, onText: @escaping (String) -> Void) {
         switch state {
-        case .recording: stop(context: context, onText: onText)
-        case .transcribing: break
+        case .recording: Task { await stop() }
+        case .finishing: break
         default:
             guard !starting else { return }
-            Task { await start() }
+            self.onLive = onLive
+            self.onText = onText
+            Task { await start(context: context) }
         }
     }
 
     func cancel() {
-        transcription?.cancel()
-        transcription = nil
-        meter?.invalidate()
-        recorder?.stop()
-        recorder = nil
+        session?.cancel()
+        session = nil
+        stopMicrophone()
+        socket?.cancel(with: .goingAway, reason: nil)
+        socket = nil
+        settle?.resume()
+        settle = nil
         level = 0
         state = .idle
     }
 
-    private func start() async {
+    // MARK: Start
+
+    private func start(context: String?) async {
         guard !starting else { return }
         starting = true
         defer { starting = false }
@@ -56,77 +70,192 @@ final class VoiceInput: ObservableObject {
             state = .failed("Microphone access is off. Turn it on in Settings › Doorlist.")
             return
         }
+        committed = ""
+        partial = ""
+        pending = []
+        sentFirst = false
+
+        // The token and the microphone start together; audio waits in `pending` until the socket is open.
+        let url = Task { try await DoorlistAPI.voiceSession() }
         do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker, .allowBluetoothHFP])
-            try session.setActive(true)
-            let settings: [String: Any] = [
-                AVFormatIDKey: kAudioFormatMPEG4AAC, AVSampleRateKey: 16_000,
-                AVNumberOfChannelsKey: 1, AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue,
-            ]
-            let fileURL = FileManager.default.temporaryDirectory
-                .appendingPathComponent("doorlist-answer-\(UUID().uuidString).m4a")
-            self.fileURL = fileURL
-            let recorder = try AVAudioRecorder(url: fileURL, settings: settings)
-            recorder.isMeteringEnabled = true
-            recorder.record(forDuration: 120)
-            self.recorder = recorder
-            state = .recording
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            meter = Timer.scheduledTimer(withTimeInterval: 0.08, repeats: true) { [weak self] _ in
-                Task { @MainActor in
-                    guard let self, let r = self.recorder else { return }
-                    r.updateMeters()
-                    // -50 dB is silence, 0 dB is loud.
-                    self.level = max(0, min(1, (Double(r.averagePower(forChannel: 0)) + 50) / 50))
-                }
-            }
+            try startMicrophone()
         } catch {
+            url.cancel()
             state = .failed("Couldn't start the microphone.")
+            return
         }
-    }
+        state = .recording
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
-    private func stop(context: String?, onText: @escaping (String) -> Void) {
-        seconds = recorder?.currentTime ?? 0
-        meter?.invalidate()
-        recorder?.stop()
-        recorder = nil
-        level = 0
-        state = .transcribing
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
-        guard let fileURL else { state = .idle; return }
-        let seconds = seconds
-        transcription?.cancel()
-        transcription = Task {
-            // Each recording has its own name, so removing it is safe even after a cancel.
-            defer { try? FileManager.default.removeItem(at: fileURL) }
+        session = Task {
             do {
-                let text = try await transcribe(fileURL, seconds: seconds, context: context)
-                    .trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !Task.isCancelled else { return }
-                if text.isEmpty {
-                    state = .failed("Didn't catch that. Try again a little closer.")
-                } else {
-                    onText(text)
-                    state = .idle
-                }
+                let socketURL = try await url.value
+                guard !Task.isCancelled, state == .recording || state == .finishing else { return }
+                let socket = URLSession.shared.webSocketTask(with: socketURL)
+                self.socket = socket
+                socket.resume()
+                let waiting = pending
+                pending = []
+                for chunk in waiting { send(chunk) }
+                try await listen(socket)
             } catch {
-                guard !Task.isCancelled else { return }
-                state = .failed(error.localizedDescription)
+                guard !Task.isCancelled, state == .recording else { return }
+                fail("Can't reach ElevenLabs right now. Check your connection and try again.")
             }
         }
     }
 
-    private func transcribe(_ fileURL: URL, seconds: Double, context: String?) async throws -> String {
-        // Words from the question help names and jargon come out right.
-        let terms = (context ?? "").split(whereSeparator: { !$0.isLetter && !$0.isNumber })
-            .map(String.init).filter { $0.count > 3 }
-        if let text = try? await DoorlistAPI.transcribe(fileURL, seconds: seconds, keyterms: Array(terms.prefix(10))),
-           !text.isEmpty {
-            return text
+    private func startMicrophone() throws {
+        let audio = AVAudioSession.sharedInstance()
+        try audio.setCategory(.playAndRecord, mode: .measurement, options: [.defaultToSpeaker, .allowBluetoothHFP])
+        try audio.setActive(true)
+        let input = engine.inputNode
+        let format = input.outputFormat(forBus: 0)
+        guard let pcm = PCM16k(from: format) else { throw VoiceError.message("Unsupported microphone format.") }
+        input.removeTap(onBus: 0)
+        // About a tenth of a second per buffer: small enough to feel live, big enough not to flood the socket.
+        input.installTap(onBus: 0, bufferSize: AVAudioFrameCount(format.sampleRate / 10), format: format) { [weak self] buffer, _ in
+            guard let (data, level) = pcm.convert(buffer) else { return }
+            Task { @MainActor in
+                guard let self, self.state == .recording else { return }
+                self.level = level
+                self.send(data)
+            }
         }
-        return try await AppleSpeech.transcribe(fileURL)
+        engine.prepare()
+        try engine.start()
+    }
+
+    private func stopMicrophone() {
+        engine.inputNode.removeTap(onBus: 0)
+        if engine.isRunning { engine.stop() }
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    // MARK: Socket
+
+    private func send(_ pcm: Data, commit: Bool = false) {
+        guard let socket else { pending.append(pcm); return }
+        sentFirst = true
+        let message: [String: Any] = [
+            "message_type": "input_audio_chunk",
+            "audio_base_64": pcm.base64EncodedString(),
+            "commit": commit,
+            "sample_rate": 16_000,
+        ]
+        guard let json = try? JSONSerialization.data(withJSONObject: message),
+              let text = String(data: json, encoding: .utf8) else { return }
+        socket.send(.string(text)) { _ in }
+    }
+
+    private func listen(_ socket: URLSessionWebSocketTask) async throws {
+        while !Task.isCancelled {
+            let message = try await socket.receive()
+            guard case .string(let text) = message,
+                  let object = try? JSONSerialization.jsonObject(with: Data(text.utf8)) as? [String: Any],
+                  let type = object["message_type"] as? String else { continue }
+            let words = (object["text"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            switch type {
+            case "partial_transcript":
+                partial = words
+                onLive?(transcript)
+            case "committed_transcript", "committed_transcript_with_timestamps":
+                if !words.isEmpty { committed = committed.isEmpty ? words : committed + " " + words }
+                partial = ""
+                onLive?(transcript)
+                if state == .finishing { settle?.resume(); settle = nil }
+            case "session_started":
+                break
+            default:
+                if type.hasSuffix("error") || type == "quota_exceeded" || type == "rate_limited" {
+                    let detail = (object["error"] as? String) ?? (object["message"] as? String) ?? type
+                    fail(type == "quota_exceeded" || type == "rate_limited"
+                         ? "Voice is busy right now. Try again in a minute." : "Voice stopped: \(detail)")
+                    return
+                }
+            }
+        }
+    }
+
+    // MARK: Stop
+
+    private func stop() async {
+        guard state == .recording else { return }
+        stopMicrophone()
+        level = 0
+        state = .finishing
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        // Close the last segment and give it a moment to come back; whatever was heard by then is the answer.
+        if socket != nil {
+            send(Data(count: 3_200), commit: true)
+            await withCheckedContinuation { (c: CheckedContinuation<Void, Never>) in
+                settle = c
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(1.5))
+                    self.settle?.resume()
+                    self.settle = nil
+                }
+            }
+        }
+        let text = transcript
+        let reached = sentFirst
+        session?.cancel()
+        session = nil
+        socket?.cancel(with: .normalClosure, reason: nil)
+        socket = nil
+        if text.isEmpty {
+            state = .failed(reached ? "Didn't catch that. Try again a little closer." : "Can't reach ElevenLabs right now.")
+        } else {
+            onText?(text)
+            state = .idle
+        }
+    }
+
+    private func fail(_ message: String) {
+        stopMicrophone()
+        socket?.cancel(with: .goingAway, reason: nil)
+        socket = nil
+        settle?.resume()
+        settle = nil
+        level = 0
+        // Keep what was heard: the words already in the field stay.
+        if !transcript.isEmpty { onText?(transcript) }
+        state = .failed(message)
+    }
+}
+
+/// Microphone audio as ElevenLabs wants it: 16 kHz mono 16-bit PCM, plus a 0...1 level for the ring.
+/// Runs on the audio thread.
+private final class PCM16k: @unchecked Sendable {
+    private let converter: AVAudioConverter
+    private let output: AVAudioFormat
+
+    init?(from input: AVAudioFormat) {
+        guard let output = AVAudioFormat(commonFormat: .pcmFormatInt16, sampleRate: 16_000, channels: 1, interleaved: true),
+              let converter = AVAudioConverter(from: input, to: output) else { return nil }
+        self.output = output
+        self.converter = converter
+    }
+
+    func convert(_ buffer: AVAudioPCMBuffer) -> (Data, Double)? {
+        let capacity = AVAudioFrameCount(Double(buffer.frameLength) * output.sampleRate / buffer.format.sampleRate) + 32
+        guard let out = AVAudioPCMBuffer(pcmFormat: output, frameCapacity: capacity) else { return nil }
+        var fed = false
+        var error: NSError?
+        converter.convert(to: out, error: &error) { _, status in
+            if fed { status.pointee = .noDataNow; return nil }
+            fed = true
+            status.pointee = .haveData
+            return buffer
+        }
+        guard error == nil, out.frameLength > 0, let samples = out.int16ChannelData?[0] else { return nil }
+        let count = Int(out.frameLength)
+        var sum = 0.0
+        for i in 0..<count { let s = Double(samples[i]) / 32_768; sum += s * s }
+        let db = 20 * log10(max(sqrt(sum / Double(count)), 1e-6))
+        // -50 dB is silence, 0 dB is loud.
+        let level = max(0, min(1, (db + 50) / 50))
+        return (Data(bytes: samples, count: count * 2), level)
     }
 }
 
@@ -135,47 +264,52 @@ enum VoiceError: LocalizedError {
     var errorDescription: String? { if case .message(let m) = self { m } else { nil } }
 }
 
-/// Apple's recognizer on the recorded file, on the device when supported.
-enum AppleSpeech {
-    static func transcribe(_ file: URL) async throws -> String {
-        let status = await withCheckedContinuation { c in SFSpeechRecognizer.requestAuthorization { c.resume(returning: $0) } }
-        guard status == .authorized else { throw VoiceError.message("Speech recognition is off. Turn it on in Settings › Doorlist.") }
-        guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable else {
-            throw VoiceError.message("Speech recognition isn't available right now.")
-        }
-        let request = SFSpeechURLRecognitionRequest(url: file)
-        request.shouldReportPartialResults = false
-        request.addsPunctuation = true
-        if recognizer.supportsOnDeviceRecognition { request.requiresOnDeviceRecognition = true }
-        return try await withCheckedThrowingContinuation { c in
-            var done = false
-            recognizer.recognitionTask(with: request) { result, error in
-                guard !done else { return }
-                if let error { done = true; c.resume(throwing: error); return }
-                if let result, result.isFinal { done = true; c.resume(returning: result.bestTranscription.formattedString) }
-            }
-        }
-    }
-}
-
-/// The mic button beside every answer field. Tap to talk, tap again to stop.
+/// The mic button beside every answer field. Tap to talk and the words appear as you speak; tap again to stop.
 struct MicButton: View {
     @StateObject private var voice = VoiceInput()
-    /// The question, used as hint words for transcription.
+    /// The question, for context.
     var context: String?
-    let onText: (String) -> Void
+    /// Filled live as the person talks. With `append`, spoken words go after what's already typed.
+    var text: Binding<String>?
+    var append = false
+    /// The final words, once the person stops.
+    var onText: (String) -> Void = { _ in }
+
+    /// What the field held before this recording, so live words replace only themselves.
+    @State private var before: String?
+
+    init(context: String?, onText: @escaping (String) -> Void) {
+        self.context = context
+        self.onText = onText
+    }
+
+    init(context: String?, into text: Binding<String>, append: Bool = false, onDone: @escaping (String) -> Void = { _ in }) {
+        self.context = context
+        self.text = text
+        self.append = append
+        self.onText = onDone
+    }
 
     private var recording: Bool { voice.state == .recording }
 
     var body: some View {
-        Button { voice.toggle(context: context, onText: onText) } label: {
+        Button {
+            if voice.state != .recording, voice.state != .finishing, let text {
+                before = append ? text.wrappedValue.trimmingCharacters(in: .whitespacesAndNewlines) : ""
+            }
+            voice.toggle(context: context, onLive: { live in write(live) }, onText: { final in
+                write(final)
+                before = nil
+                onText(final)
+            })
+        } label: {
             ZStack {
                 Circle()
                     .stroke(Color.red.opacity(0.3), lineWidth: 6)
                     .scaleEffect(1 + voice.level * 0.4)
                     .opacity(recording ? 1 : 0)
                 Circle().fill(recording ? Color.red : Color.accentColor.opacity(0.14))
-                if voice.state == .transcribing {
+                if voice.state == .finishing {
                     ProgressView().tint(.accentColor)
                 } else {
                     Image(systemName: recording ? "stop.fill" : "mic.fill")
@@ -212,5 +346,11 @@ struct MicButton: View {
             }
         }
         .onDisappear { voice.cancel() }
+    }
+
+    private func write(_ spoken: String) {
+        guard let text else { return }
+        let base = before ?? ""
+        text.wrappedValue = base.isEmpty ? spoken : base + " " + spoken
     }
 }

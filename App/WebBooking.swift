@@ -973,9 +973,7 @@ struct WebBookingView: View {
                         .submitLabel(.done)
                         .onSubmit { submit(ask) }
                         .padding(.vertical, 12)
-                    MicButton(context: ask.label) { spoken in
-                        answerText = ask.multiline && !answerText.isEmpty ? answerText + " " + spoken : spoken
-                    }
+                    MicButton(context: ask.label, into: $answerText, append: ask.multiline)
                 }
                 .padding(.leading, 12).padding(.trailing, 4)
                 .background(Color.fill,

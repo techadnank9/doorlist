@@ -276,7 +276,7 @@ private struct DetailRow: View {
                     .focused(focus, equals: field)
                     .padding(.vertical, 14)
                 if field == .name {
-                    MicButton(context: "name") { text = $0 }
+                    MicButton(context: "name", into: $text)
                 }
             }
             .padding(.leading, 14).padding(.trailing, 6)

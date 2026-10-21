@@ -253,10 +253,7 @@ struct FindView: View {
                     .onSubmit(search)
                     .padding(.vertical, 14)
                 if trimmedQuery.isEmpty {
-                    MicButton(context: nil) { spoken in
-                        model.query = spoken
-                        search()
-                    }
+                    MicButton(context: nil, into: $model.query) { _ in search() }
                     .padding(.bottom, 4)
                 } else {
                     Button(action: search) {
@@ -345,7 +342,7 @@ struct FindView: View {
                     .onSubmit { answer(followUp) }
                     .padding(12)
                     .background(Color.fill, in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
-                MicButton(context: question) { answer($0) }
+                MicButton(context: question, into: $followUp) { answer($0) }
             }
         }
         .card()

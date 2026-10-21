@@ -86,9 +86,7 @@ struct ReplyView: View {
                     .submitLabel(.send)
                     .onSubmit { start() }
                     .padding(.vertical, 12)
-                MicButton(context: "Instructions for a reply") { spoken in
-                    hint = hint.isEmpty ? spoken : hint + " " + spoken
-                }
+                MicButton(context: "Instructions for a reply", into: $hint, append: true)
                 .padding(.vertical, 4)
             }
             .padding(.leading, 12).padding(.trailing, 4)

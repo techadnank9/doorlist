@@ -46,21 +46,16 @@ enum DoorlistAPI {
 
     // MARK: Voice
 
-    /// Sends a recording to the server, which turns it into text with ElevenLabs.
-    static func transcribe(_ file: URL, seconds: Double, keyterms: [String]) async throws -> String {
-        var components = URLComponents(url: base.appendingPathComponent("v1/transcribe"), resolvingAgainstBaseURL: false)!
-        if !keyterms.isEmpty { components.queryItems = [URLQueryItem(name: "keyterms", value: keyterms.joined(separator: ","))] }
-        var req = request("v1/transcribe", timeout: 60)
-        req.url = components.url
-        req.setValue("audio/mp4", forHTTPHeaderField: "Content-Type")
-        req.setValue(String(format: "%.1f", seconds), forHTTPHeaderField: "x-audio-seconds")
-        let (data, response) = try await URLSession.shared.upload(for: req, fromFile: file)
+    /// Where to stream the microphone for live dictation: an ElevenLabs Scribe v2 Realtime socket with a
+    /// single use token from Doorlist's server.
+    static func voiceSession() async throws -> URL {
+        let (data, response) = try await URLSession.shared.data(for: request("v1/voice/session", timeout: 15))
         let status = (response as? HTTPURLResponse)?.statusCode ?? 0
         guard status == 200, let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let text = json["text"] as? String else {
+              let raw = json["url"] as? String, let url = URL(string: raw) else {
             throw VoiceError.message(message(from: data, status: status))
         }
-        return text
+        return url
     }
 
     // MARK: Sign in with Apple

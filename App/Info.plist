@@ -39,8 +39,6 @@
 	<string>Doorlist finds events near you. Only your town is used in a search, never your exact spot.</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Speak your answers instead of typing them.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Turns your spoken answers into text when Doorlist's server can't.</string>
 	<key>PostHogAPIKey</key>
 	<string>$(POSTHOG_API_KEY)</string>
 	<key>PostHogHost</key>

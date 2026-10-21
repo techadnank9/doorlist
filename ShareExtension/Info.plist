@@ -50,7 +50,5 @@
 	</dict>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Speak your answers instead of typing them.</string>
-	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Turns your spoken answers into text when Doorlist's server can't.</string>
 </dict>
 </plist>

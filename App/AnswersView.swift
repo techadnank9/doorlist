@@ -306,7 +306,7 @@ private struct EditAnswerSheet: View {
                             .focused($focused)
                             .padding(.vertical, 10)
                         if !isIdentifier {
-                            MicButton(context: target.label) { value = $0 }
+                            MicButton(context: target.label, into: $value)
                         }
                     }
                 } header: {

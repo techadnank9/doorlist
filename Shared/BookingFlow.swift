@@ -430,9 +430,7 @@ private struct QuestionScreen: View {
                     .padding(.vertical, 14)
                 if !isIdentifier {
                     // Spoken answers suit open questions; emails and handles are faster typed.
-                    MicButton(context: field.label) { spoken in
-                        field.text = multiline && !field.text.isEmpty ? field.text + " " + spoken : spoken
-                    }
+                    MicButton(context: field.label, into: $field.text, append: multiline)
                     .padding(.vertical, multiline ? 6 : 0)
                 }
             }

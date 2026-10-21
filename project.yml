@@ -54,7 +54,6 @@ targets:
         NSCalendarsFullAccessUsageDescription: Doorlist checks when you're busy so Find skips events that clash. Your calendar never leaves your phone.
         NSLocationWhenInUseUsageDescription: Doorlist finds events near you. Only your town is used in a search, never your exact spot.
         NSMicrophoneUsageDescription: Speak your answers instead of typing them.
-        NSSpeechRecognitionUsageDescription: Turns your spoken answers into text when Doorlist's server can't.
         DoorlistAPIBase: $(DOORLIST_API_BASE)
         DoorlistAppToken: $(DOORLIST_APP_TOKEN)
         PostHogAPIKey: $(POSTHOG_API_KEY)
@@ -100,7 +99,6 @@ targets:
               NSExtensionActivationSupportsText: true
               NSExtensionActivationSupportsImageWithMaxCount: 1
         NSMicrophoneUsageDescription: Speak your answers instead of typing them.
-        NSSpeechRecognitionUsageDescription: Turns your spoken answers into text when Doorlist's server can't.
         DoorlistAPIBase: $(DOORLIST_API_BASE)
         DoorlistAppToken: $(DOORLIST_APP_TOKEN)
         NSAppTransportSecurity:
