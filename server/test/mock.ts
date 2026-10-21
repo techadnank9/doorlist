@@ -44,6 +44,13 @@ mock.post("/openai/responses", async (c) => {
     return c.json({ output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ ranked }) }] }], usage });
   }
 
+  if (input.startsWith("You are filling in an event registration form")) {
+    // Writing help: echo enough of the prompt for tests to check what went in.
+    const notes = input.match(/Their notes for this answer:\n([^\n]*)/)?.[1];
+    const text = notes ? `"Polished: ${notes}"` : `I build robots. (${input.includes("Robotics Hack Day") ? "saw the event" : "no event"})`;
+    return c.json({ output: [{ type: "message", content: [{ type: "output_text", text }] }], usage });
+  }
+
   const request = input.match(/request: "([^"]*)"/)?.[1] ?? "";
   if (/^(something|anything|stuff)$/i.test(request.trim()) && !input.includes("They already answered")) {
     const text = JSON.stringify({ question: "What kind of thing are you in the mood for?", options: ["A party", "A tech meetup", "Live music", "Something outdoors"] });

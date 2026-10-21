@@ -13,11 +13,34 @@ struct LumaEventPage: Decodable {
     let solanaAddressRequirement: String?
     let soldOut: Bool?
     let waitlistActive: Bool?
+    /// The event's description, as Luma's editor stores it.
+    let descriptionMirror: RichNode?
+
+    /// The description as plain text, a line per paragraph, for Write with AI.
+    var aboutText: String? {
+        guard let descriptionMirror else { return nil }
+        let text = descriptionMirror.plain.trimmingCharacters(in: .whitespacesAndNewlines)
+        return text.isEmpty ? nil : text
+    }
 
     var eventApiId: String { apiId ?? event.apiId }
     var questions: [LumaQuestion] { registrationQuestions ?? [] }
     var wantsFirstLast: Bool { nameRequirement == "first-last" }
     var needsWallet: Bool { ethAddressRequirement == "required" || solanaAddressRequirement == "required" }
+}
+
+/// One node of Luma's rich text: a paragraph, heading, list item, or a run of text.
+struct RichNode: Decodable {
+    let type: String?
+    let text: String?
+    let content: [RichNode]?
+
+    var plain: String {
+        if let text { return text }
+        let inner = (content ?? []).map(\.plain).joined()
+        let blocks: Set<String> = ["paragraph", "heading", "list_item", "blockquote", "horizontal_rule"]
+        return blocks.contains(type ?? "") ? inner + "\n" : inner
+    }
 }
 
 struct LumaEvent: Decodable {

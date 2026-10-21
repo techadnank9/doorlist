@@ -27,7 +27,7 @@ export interface UsageRow {
   ts: number;
   req: string;
   who: string;
-  kind: "search" | "transcribe";
+  kind: "search" | "transcribe" | "draft";
   provider: "openai" | "exa" | "elevenlabs";
   inputTokens: number;
   cachedTokens: number;

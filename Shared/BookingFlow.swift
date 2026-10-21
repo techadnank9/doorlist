@@ -323,6 +323,7 @@ private struct QuestionFlow: View {
                         }
                     }
                     QuestionScreen(field: field, focused: $focused, onSubmit: submit)
+                        .environment(\.draftContext, DraftContext(event: model.event?.name, about: model.plan?.page.aboutText))
                         .id(id)
                         .transition(transition)
                 }
@@ -438,6 +439,9 @@ private struct QuestionScreen: View {
             .padding(.leading, 14).padding(.trailing, 6)
             .background(Color.surface,
                         in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
+            if multiline {
+                AIWriteBar(question: field.label, text: $field.text)
+            }
         case .single(let options):
             OptionList(options: options, isSelected: { field.text == $0 }, multiple: false) { option in
                 field.text = option

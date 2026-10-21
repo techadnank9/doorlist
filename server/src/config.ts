@@ -7,6 +7,7 @@ export const config = {
   appToken: process.env.APP_TOKEN ?? "",
   searchLimit: Number(process.env.SEARCH_LIMIT_PER_DAY ?? 40),
   transcribeLimit: Number(process.env.TRANSCRIBE_LIMIT_PER_DAY ?? 120),
+  draftLimit: Number(process.env.DRAFT_LIMIT_PER_DAY ?? 100),
   port: Number(process.env.PORT ?? 8787),
   // Upstreams, overridable so tests can point at local stand-ins.
   openAIBase: process.env.OPENAI_BASE_URL || "https://api.openai.com/v1",

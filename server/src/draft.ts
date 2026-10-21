@@ -1,0 +1,69 @@
+import { config } from "./config.js";
+import type { Meter } from "./meter.js";
+import { outputText, respond } from "./search.js";
+
+/**
+ * Write with AI and Polish with AI, for a registration question that wants a sentence or a paragraph.
+ * The app sends the question, what the event is about, the person's saved answers and, to polish,
+ * their own notes. The answer is first person, fits the event, and never claims anything the person
+ * didn't say.
+ */
+export interface DraftInput {
+  question: string;
+  event?: string;
+  about?: string;
+  notes?: string;
+  profile: { label: string; value: string }[];
+}
+
+const str = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+
+export function parseDraft(body: any): DraftInput | null {
+  const question = str(body?.question, 600);
+  if (!question) return null;
+  const profile = (Array.isArray(body?.profile) ? body.profile : [])
+    .slice(0, 25)
+    .map((p: any) => ({ label: str(p?.label, 200), value: str(p?.value, 600) }))
+    .filter((p: { label: string; value: string }) => p.label && p.value);
+  return {
+    question,
+    event: str(body?.event, 200) || undefined,
+    about: str(body?.about, 6000) || undefined,
+    notes: str(body?.notes, 2000) || undefined,
+    profile,
+  };
+}
+
+export function draftPrompt(input: DraftInput): string {
+  const facts = input.profile.map((p) => `- ${p.label}: ${p.value}`).join("\n") || "(none saved)";
+  const task = input.notes
+    ? `Rewrite their notes into a clear, natural answer. Keep every fact in the notes; add no new claims.`
+    : `Write the answer from what you know about them below. Use only those facts.`;
+  return `You are filling in an event registration form for someone, in their own voice (first person).
+
+Event: ${input.event ?? "(unknown)"}
+What the event is about:
+${input.about ?? "(no description)"}
+
+The question on the form:
+${input.question}
+
+What we know about the person (their saved answers):
+${facts}
+${input.notes ? `\nTheir notes for this answer:\n${input.notes}\n` : ""}
+${task}
+Rules:
+- Read what the event is about and answer in a way that fits it: the angle the organizers care about (team matching, a
+  talk's topic, why they want to come). Mention what in their background is most relevant to this event.
+- Never invent experience, employers, schools, projects, numbers or skills. If something the question asks about isn't
+  known, say so briefly and honestly (for example "I'm new to robotics hardware") rather than making it up.
+- Respect any length the question sets ("3-4 sentences", "under 100 words"); otherwise 2 to 4 sentences.
+- Plain text only: no quotes around it, no markdown, no greeting, no sign-off.
+
+Reply with the answer and nothing else.`;
+}
+
+export async function draft(input: DraftInput, meter: Meter): Promise<string> {
+  const json = await respond({ model: config.model, input: draftPrompt(input), reasoning: { effort: "low" } }, meter);
+  return outputText(json).trim().replace(/^"(.*)"$/s, "$1");
+}

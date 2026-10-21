@@ -427,6 +427,9 @@ final class WebBookingModel: ObservableObject {
     /// What Fill this page did, shown while the person is steering.
     @Published private(set) var pausedNote: String?
 
+    /// The page's own words, for Write with AI to read what the event is about.
+    var pageText: String? { lastScan?.text }
+
     // MARK: Accounts
 
     /// Buttons that send a sign in or sign up form; only tapped while a password box is on the page,
@@ -978,6 +981,10 @@ struct WebBookingView: View {
                 .background(Color.fill,
                             in: RoundedRectangle(cornerRadius: Theme.controlRadius, style: .continuous))
                 rememberToggle
+                if ask.multiline {
+                    AIWriteBar(question: ask.label, text: $answerText)
+                        .environment(\.draftContext, DraftContext(event: model.eventTitle, about: model.pageText))
+                }
                 Button("Fill it in") { submit(ask) }
                     .buttonStyle(.primary)
                     .disabled(answerText.trimmingCharacters(in: .whitespaces).isEmpty)

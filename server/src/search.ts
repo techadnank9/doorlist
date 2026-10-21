@@ -349,7 +349,7 @@ ${lines}`;
 export class SearchError extends Error {}
 
 /** POST /responses. Retries once without `reasoning` for models that don't take it. */
-async function respond(body: Record<string, unknown>, meter: Meter): Promise<any> {
+export async function respond(body: Record<string, unknown>, meter: Meter): Promise<any> {
   const started = performance.now();
   const res = await fetch(`${config.openAIBase}/responses`, {
     method: "POST",
@@ -378,7 +378,7 @@ async function respond(body: Record<string, unknown>, meter: Meter): Promise<any
   throw new SearchError(`Search failed upstream (${res.status}).`);
 }
 
-function outputText(json: any): string {
+export function outputText(json: any): string {
   if (typeof json?.output_text === "string") return json.output_text;
   const items: any[] = Array.isArray(json?.output) ? json.output : [];
   return items

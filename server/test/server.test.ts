@@ -217,6 +217,27 @@ describe("POST /v1/search", () => {
   });
 });
 
+describe("POST /v1/draft", () => {
+  const draftCall = (body: unknown, install = "install-draft") =>
+    app.request("/v1/draft", { method: "POST", headers: headers(install), body: JSON.stringify(body) });
+
+  test("writes from the event and saved answers, or polishes the person's notes", async () => {
+    const written = await draftCall({
+      question: "Describe your robotics experience", event: "Robotics Hack Day", about: "A weekend of building robots.",
+      profile: [{ label: "Job title", value: "Engineer" }],
+    });
+    assert.equal(written.status, 200);
+    assert.equal(((await written.json()) as any).text, "I build robots. (saw the event)");
+
+    const polished = await draftCall({ question: "Describe your robotics experience", notes: "5 yrs python, ROS basics", profile: [] });
+    assert.equal(((await polished.json()) as any).text, "Polished: 5 yrs python, ROS basics", "quotes around it are stripped");
+  });
+
+  test("needs the question", async () => {
+    assert.equal((await draftCall({ profile: [] })).status, 400);
+  });
+});
+
 describe("POST /v1/transcribe", () => {
   test("turns a recording into text through ElevenLabs", async () => {
     const audio = new Uint8Array(8000).fill(7);
