@@ -238,6 +238,24 @@ describe("POST /v1/draft", () => {
   });
 });
 
+describe("POST /v1/reply", () => {
+  const image = "/9j/" + "A".repeat(400);
+  const replyCall = (body: unknown) =>
+    app.request("/v1/reply", { method: "POST", headers: headers("install-reply"), body: JSON.stringify(body) });
+
+  test("answers a screenshot, and follows a hint", async () => {
+    const first = await replyCall({ image, profile: [{ label: "Job title", value: "Engineer" }] });
+    assert.equal(first.status, 200);
+    assert.equal(((await first.json()) as any).text, "Sounds good, what times work for you?");
+    const steered = await replyCall({ image, hint: "free tomorrow at 3", previous: "Sounds good", profile: [] });
+    assert.equal(((await steered.json()) as any).text, "Sure, free tomorrow at 3");
+  });
+
+  test("turns away something that isn't an image", async () => {
+    assert.equal((await replyCall({ image: "not an image", profile: [] })).status, 400);
+  });
+});
+
 describe("POST /v1/transcribe", () => {
   test("turns a recording into text through ElevenLabs", async () => {
     const audio = new Uint8Array(8000).fill(7);

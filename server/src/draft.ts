@@ -67,3 +67,57 @@ export async function draft(input: DraftInput, meter: Meter): Promise<string> {
   const json = await respond({ model: config.model, input: draftPrompt(input), reasoning: { effort: "low" } }, meter);
   return outputText(json).trim().replace(/^"(.*)"$/s, "$1");
 }
+
+// MARK: Replies from a screenshot
+
+/**
+ * Share a screenshot of any chat, form or post, and Doorlist writes what the person would answer, in their voice,
+ * from their saved answers. A hint ("say I'm free tomorrow at 3") steers it or rewrites the last version.
+ */
+export interface ReplyInput {
+  image: string;
+  hint?: string;
+  previous?: string;
+  profile: { label: string; value: string }[];
+}
+
+export function parseReply(body: any): ReplyInput | null {
+  const image = typeof body?.image === "string" ? body.image : "";
+  // A base64 JPEG or PNG, up to about 3 MB.
+  if (!/^[A-Za-z0-9+/=]{100,4000000}$/.test(image)) return null;
+  const base = parseDraft({ question: "reply", profile: body?.profile });
+  return { image, hint: str(body?.hint, 600) || undefined, previous: str(body?.previous, 3000) || undefined, profile: base!.profile };
+}
+
+export function replyPrompt(input: ReplyInput): string {
+  const facts = input.profile.map((p) => `- ${p.label}: ${p.value}`).join("\n") || "(none saved)";
+  return `The image is a screenshot from the person's phone: a chat, an email, a post, or a form.
+
+Work out what they'd want to send next: the reply to the latest message addressed to them, or the answer to the
+question or field on screen. Then write it in their own voice (first person), matching the tone of the conversation
+(casual chat stays casual and short; a form or email can be fuller).
+
+What we know about the person (their saved answers):
+${facts}
+${input.previous ? `\nThe last version you wrote:\n${input.previous}\n` : ""}${input.hint ? `\nTheir instructions for this reply (follow these first):\n${input.hint}\n` : ""}
+Rules:
+- Never invent facts about them, plans, times or commitments they didn't give. If the reply needs something you don't
+  know (when they're free, a number), keep it open ("what times work for you?") rather than making it up.
+- Use their background only where it helps the reply.
+- Plain text only, ready to paste: no quotes around it, no markdown, no explanation.
+
+Reply with the message and nothing else.`;
+}
+
+export async function reply(input: ReplyInput, meter: Meter): Promise<string> {
+  const mime = input.image.startsWith("iVBOR") ? "image/png" : "image/jpeg";
+  const json = await respond({
+    model: config.model,
+    input: [{ role: "user", content: [
+      { type: "input_text", text: replyPrompt(input) },
+      { type: "input_image", image_url: `data:${mime};base64,${input.image}` },
+    ] }],
+    reasoning: { effort: "low" },
+  }, meter);
+  return outputText(json).trim().replace(/^"(.*)"$/s, "$1");
+}

@@ -11,6 +11,12 @@ final class ShareViewController: UIViewController {
         view.backgroundColor = .systemBackground
         Task { @MainActor in
             let text = await sharedText()
+            // A screenshot (and no event link): write the reply to what's on it.
+            if text.flatMap({ EventLink.find(in: $0, allowAnySite: true) }) == nil, let image = await sharedImage() {
+                let close: () -> Void = { [weak self] in self?.extensionContext?.completeRequest(returningItems: nil) }
+                embed(ReplyView(image: image, onClose: close))
+                return
+            }
             show(input: text ?? "")
         }
     }
@@ -34,6 +40,18 @@ final class ShareViewController: UIViewController {
         host.view.autoresizingMask = [.flexibleWidth, .flexibleHeight]
         view.addSubview(host.view)
         host.didMove(toParent: self)
+    }
+
+    /// The first image shared, as Photos and the screenshot editor hand it over (a file URL, data or an image).
+    private func sharedImage() async -> UIImage? {
+        let providers = (extensionContext?.inputItems as? [NSExtensionItem] ?? []).flatMap { $0.attachments ?? [] }
+        for provider in providers where provider.hasItemConformingToTypeIdentifier(UTType.image.identifier) {
+            guard let item = try? await provider.loadItem(forTypeIdentifier: UTType.image.identifier) else { continue }
+            if let image = item as? UIImage { return image }
+            if let data = item as? Data, let image = UIImage(data: data) { return image }
+            if let url = item as? URL, let data = try? Data(contentsOf: url), let image = UIImage(data: data) { return image }
+        }
+        return nil
     }
 
     /// The first URL or text in the shared items that contains a Luma link.

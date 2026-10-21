@@ -44,6 +44,16 @@ mock.post("/openai/responses", async (c) => {
     return c.json({ output: [{ type: "message", content: [{ type: "output_text", text: JSON.stringify({ ranked }) }] }], usage });
   }
 
+  if (Array.isArray(body.input)) {
+    // A screenshot reply: the prompt and the image arrive as content parts.
+    const parts = body.input[0]?.content ?? [];
+    const prompt = String(parts.find((p: any) => p.type === "input_text")?.text ?? "");
+    const hasImage = parts.some((p: any) => p.type === "input_image" && String(p.image_url).startsWith("data:image/"));
+    const hint = prompt.match(/follow these first\):\n([^\n]*)/)?.[1];
+    const text = hasImage ? (hint ? `Sure, ${hint}` : "Sounds good, what times work for you?") : "no image";
+    return c.json({ output: [{ type: "message", content: [{ type: "output_text", text }] }], usage });
+  }
+
   if (input.startsWith("You are filling in an event registration form")) {
     // Writing help: echo enough of the prompt for tests to check what went in.
     const notes = input.match(/Their notes for this answer:\n([^\n]*)/)?.[1];

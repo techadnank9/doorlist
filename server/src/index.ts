@@ -13,7 +13,7 @@ import { Meter } from "./meter.js";
 import { findJob, follow, jobKey, startJob } from "./searchJobs.js";
 import { search, SearchError, type SearchInput } from "./search.js";
 import { clean, remove, sync } from "./sync.js";
-import { draft, parseDraft } from "./draft.js";
+import { draft, parseDraft, parseReply, reply } from "./draft.js";
 import { transcribe } from "./transcribe.js";
 
 export const app = new Hono();
@@ -112,6 +112,25 @@ app.post("/v1/draft", async (c) => {
   if (!take(who, "draft", config.draftLimit)) return c.json({ error: "That's today's AI writing used up. More tomorrow." }, 429);
   try {
     const text = await draft(input, new Meter(who, "draft"));
+    if (!text) return c.json({ error: "The AI came back empty. Try again." }, 502);
+    return c.json({ text });
+  } catch (error) {
+    const message = error instanceof SearchError ? error.message : "Writing help hit a snag. Try again.";
+    if (sentryOn && !(error instanceof SearchError)) Sentry.captureException(error);
+    return c.json({ error: message }, 502);
+  }
+});
+
+// A screenshot shared to Doorlist: the reply the person would send, from their saved answers.
+app.post("/v1/reply", async (c) => {
+  const who = caller(c);
+  if (!who) return c.json({ error: "Missing install id." }, 400);
+  if (!config.openAIKey) return c.json({ error: "Writing help isn't set up on this server yet." }, 503);
+  const input = parseReply(await c.req.json().catch(() => null));
+  if (!input) return c.json({ error: "Couldn't read that screenshot." }, 400);
+  if (!take(who, "draft", config.draftLimit)) return c.json({ error: "That's today's AI writing used up. More tomorrow." }, 429);
+  try {
+    const text = await reply(input, new Meter(who, "draft"));
     if (!text) return c.json({ error: "The AI came back empty. Try again." }, 502);
     return c.json({ text });
   } catch (error) {

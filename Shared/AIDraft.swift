@@ -23,20 +23,40 @@ extension EnvironmentValues {
 enum AIDraft {
     private static let neverSent = ["email", "phone", "address", "street", "zip", "postal", "birth", "passport", "ssn"]
 
-    static func write(question: String, notes: String?, context: DraftContext?) async throws -> String {
-        let saved = AnswerStore.shared.all()
+    /// The person's saved answers, newest first, without contact details.
+    static func profile() -> [[String: String]] {
+        Array(AnswerStore.shared.all()
             .filter { key, answer in
                 !neverSent.contains { key.lowercased().contains($0) || answer.label.lowercased().contains($0) }
             }
             .sorted { $0.value.updatedAt > $1.value.updatedAt }
             .prefix(25)
-            .map { ["label": $0.value.label, "value": $0.value.value] }
-        var body: [String: Any] = ["question": question, "profile": Array(saved)]
+            .map { ["label": $0.value.label, "value": $0.value.value] })
+    }
+
+    /// What the person would send next on the screen in this screenshot, in their voice.
+    static func reply(to image: UIImage, hint: String?, previous: String?) async throws -> String {
+        // About 1280 px on the long side is plenty to read text and keeps the upload small.
+        let scale = min(1, 1280 / max(image.size.width, image.size.height))
+        let size = CGSize(width: image.size.width * scale, height: image.size.height * scale)
+        let small = UIGraphicsImageRenderer(size: size).image { _ in image.draw(in: CGRect(origin: .zero, size: size)) }
+        guard let jpeg = small.jpegData(compressionQuality: 0.7) else { throw DraftError(message: "Couldn't read that screenshot.") }
+        var body: [String: Any] = ["image": jpeg.base64EncodedString(), "profile": profile()]
+        if let hint = hint?.trimmingCharacters(in: .whitespacesAndNewlines), !hint.isEmpty { body["hint"] = hint }
+        if let previous, !previous.isEmpty { body["previous"] = previous }
+        return try await post("v1/reply", body)
+    }
+
+    static func write(question: String, notes: String?, context: DraftContext?) async throws -> String {
+        var body: [String: Any] = ["question": question, "profile": profile()]
         if let event = context?.event { body["event"] = event }
         if let about = context?.about { body["about"] = String(about.prefix(6000)) }
         if let notes = notes?.trimmingCharacters(in: .whitespacesAndNewlines), !notes.isEmpty { body["notes"] = notes }
+        return try await post("v1/draft", body)
+    }
 
-        var req = DoorlistAPI.request("v1/draft", timeout: 60)
+    private static func post(_ path: String, _ body: [String: Any]) async throws -> String {
+        var req = DoorlistAPI.request(path, timeout: 60)
         req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         req.httpBody = try JSONSerialization.data(withJSONObject: body)
         let (data, response) = try await URLSession.shared.data(for: req)

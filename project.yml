@@ -98,6 +98,7 @@ targets:
             NSExtensionActivationRule:
               NSExtensionActivationSupportsWebURLWithMaxCount: 1
               NSExtensionActivationSupportsText: true
+              NSExtensionActivationSupportsImageWithMaxCount: 1
         NSMicrophoneUsageDescription: Speak your answers instead of typing them.
         NSSpeechRecognitionUsageDescription: Turns your spoken answers into text when Doorlist's server can't.
         DoorlistAPIBase: $(DOORLIST_API_BASE)
